@@ -202,9 +202,24 @@ export function lifeSpan(indi: IndiView, o: DateFormatOptions): string {
   const died = eventOf(indi, ['DEAT', 'BURI']);
   const b = formatDate(born?.date, opts);
   const d = formatDate(died?.date, opts);
-  if (!b && !d) return '';
-  return `${b} — ${d}`.trim();
+  const deathKnown = indi.events.some(
+    (e) => e.tag === 'DEAT' || e.tag === 'BURI',
+  );
+  const words = LIFE_WORDS[o.locale.slice(0, 2)] ?? LIFE_WORDS.en!;
+  if (b && d) return `${b} — ${d}`;
+  // Died, date unknown: keep the dash but say so instead of leaving it open.
+  if (b && deathKnown) return `${b} — ?`;
+  if (b) return `${words.born} ${b}`;
+  if (d) return `${words.died} ${d}`;
+  return '';
 }
+
+// Life-span prefixes are part of a compact date string built outside React,
+// so they live here rather than in the message catalogues.
+const LIFE_WORDS: Record<string, {born: string; died: string}> = {
+  en: {born: 'b.', died: 'd.'},
+  ru: {born: 'род.', died: 'ум.'},
+};
 
 export function displayName(indi: IndiView | undefined, fallback = ''): string {
   return indi?.names[0]?.display || fallback || indi?.id || '';

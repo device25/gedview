@@ -161,6 +161,36 @@ describe('lifeSpan', () => {
     const maria = mockTree.indis.get('I3');
     expect(maria && lifeSpan(maria, ru)).toBe('ок. 1862 — 1930');
   });
+
+  it('never leaves a dangling dash', () => {
+    const ivan = mockTree.indis.get('I1')!;
+    const keep = (pred: (tag: string) => boolean) => ({
+      ...ivan,
+      events: ivan.events.filter((e) => pred(e.tag)),
+    });
+    const bornOnly = keep((t) => t === 'BIRT');
+    expect(lifeSpan(bornOnly, ru)).toBe('род. 6 апр 1889 ст. ст.');
+    expect(lifeSpan(bornOnly, en)).toBe('b. 6 Apr 1889 O.S.');
+    const diedOnly = keep((t) => t === 'DEAT');
+    expect(lifeSpan(diedOnly, ru)).toBe('ум. 1957');
+    expect(lifeSpan(diedOnly, en)).toBe('d. 1957');
+    const deathUndated = {
+      ...bornOnly,
+      events: [
+        ...bornOnly.events,
+        ...ivan.events
+          .filter((e) => e.tag === 'DEAT')
+          .map((e) => ({...e, date: undefined})),
+      ],
+    };
+    expect(lifeSpan(deathUndated, ru)).toBe('6 апр 1889 ст. ст. — ?');
+    expect(
+      lifeSpan(
+        keep(() => false),
+        ru,
+      ),
+    ).toBe('');
+  });
 });
 
 describe('helpers', () => {
