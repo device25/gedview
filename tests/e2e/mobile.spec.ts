@@ -115,7 +115,17 @@ test.describe('phone layout', () => {
       name: 'Евдокия Семёновна Крылова',
     });
     const swipe = async (dy: number) => {
-      const b = (await card.locator('.card__head').boundingBox())!;
+      // Start where the card's top is once it has stopped moving.
+      const head = card.locator('.card__head');
+      let b = (await head.boundingBox())!;
+      await expect
+        .poll(async () => {
+          const now = (await head.boundingBox())!;
+          const still = now.y === b.y;
+          b = now;
+          return still;
+        })
+        .toBe(true);
       const x = b.x + b.width / 2;
       const y = b.y + b.height / 2;
       await page.mouse.move(x, y);

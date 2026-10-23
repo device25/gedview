@@ -208,6 +208,12 @@
     display: none;
   }
 
+  /* The sheet's top is for swiping, not for scrolling the page. */
+  .card__handle,
+  .card__head {
+    touch-action: none;
+  }
+
   /* Down, the sheet is its header: a tap on the name raises it. */
   .card:not([data-expanded]) .card__title {
     cursor: pointer;

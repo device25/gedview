@@ -132,19 +132,27 @@ export function PersonCard() {
     isMobile
       ? dispatch({type: 'setSheetUp', up: !sheetUp})
       : dispatch({type: 'toggleCardExpanded'});
-  // A swipe ends wherever the finger is lifted, often off the card.
+  // A swipe ends wherever the finger is lifted, often off the card; the
+  // browser may also take the gesture over (pointercancel), so the last
+  // position seen counts.
   const swipeStart = (e: PointerEvent) => {
     if (!isMobile) return;
     const from = e.clientY;
-    window.addEventListener(
-      'pointerup',
-      (up) => {
-        const dy = up.clientY - from;
-        if (dy < -SWIPE) dispatch({type: 'setSheetUp', up: true});
-        if (dy > SWIPE) dispatch({type: 'setSheetUp', up: false});
-      },
-      {once: true},
-    );
+    let last = from;
+    const move = (m: globalThis.PointerEvent) => {
+      last = m.clientY;
+    };
+    const end = (u: globalThis.PointerEvent) => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      const dy = (u.type === 'pointerup' ? u.clientY : last) - from;
+      if (dy < -SWIPE) dispatch({type: 'setSheetUp', up: true});
+      if (dy > SWIPE) dispatch({type: 'setSheetUp', up: false});
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
   };
 
   const close = () => {
