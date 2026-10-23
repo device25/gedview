@@ -35,4 +35,5 @@ export const SETTINGS: ChartSettings = {
   disproven: 'hide',
   dateStyle: 'source',
   hideRestricted: false,
+  loadRemoteMedia: true,
 };
