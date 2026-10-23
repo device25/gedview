@@ -63,8 +63,12 @@ CI workflow manually with `update_snapshots` enabled and commit the
 
 ## Deploy
 
-`dist/` is a static site with no server side: host it on GitHub Pages or any
-static host, or run it locally with `npm run preview`.
+Live: https://device25.github.io/gedview/ (try `?demo`).
+
+Every push to `main` that passes CI is deployed to GitHub Pages by
+`.github/workflows/pages.yml`. `dist/` is a static site with no server side,
+so it can also be served from any static host or locally with
+`npm run preview`.
 
 ## Personal data
 
@@ -74,8 +78,11 @@ them `*.private.ged` — both are git-ignored.
 
 ## Development
 
-Trunk-based: short-lived branches, small pull requests, `main` always green.
-Commits, pull requests, docs and code comments are in English.
+Trunk-based: short-lived branches, small pull requests, `main` always green
+(protected: linear history, CI required for pull requests). Commits and pull
+request titles follow [Conventional Commits](https://www.conventionalcommits.org).
+Commits, pull requests, docs and code comments are in English. Dependabot
+proposes weekly dependency updates.
 
 ## License
 
