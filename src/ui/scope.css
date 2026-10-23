@@ -1,0 +1,275 @@
+/* «Кого показывать» in the chart header, and its phone sheet. */
+.scope {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 16px;
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.scope__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.scope__count {
+  align-self: center;
+  margin: 18px 0 0;
+  color: var(--text-2);
+}
+
+.scope-root {
+  width: 260px;
+}
+
+.scope-root__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 4px 0 10px;
+  gap: 6px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-s);
+  background: var(--card);
+  color: var(--text-2);
+}
+
+.scope-root__field:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.scope-root__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.scope-root__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.scope-root__popover {
+  width: var(--trigger-width);
+  max-height: 320px;
+  overflow: auto;
+  border-radius: var(--radius-s);
+  background: var(--card);
+  box-shadow: 0 8px 28px var(--shadow);
+}
+
+.scope-root__list {
+  padding: 4px;
+  outline: none;
+}
+
+.scope-root__item {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.scope-root__item[data-focused],
+.scope-root__item[data-hovered] {
+  background: var(--pill);
+}
+
+.scope-root__item[data-selected] {
+  box-shadow: inset 3px 0 0 var(--text);
+  font-weight: 600;
+}
+
+.scope-root__life {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* The level choice: a segmented control; the selected segment is inverted. */
+.levels__options {
+  display: flex;
+}
+
+.levels--bar .levels__options {
+  height: 32px;
+  overflow: hidden;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-s);
+  background: var(--card);
+}
+
+.levels--bar .levels__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.levels--bar .levels__option + .levels__option {
+  border-left: 1px solid var(--control);
+}
+
+.levels--bar .levels__option[data-selected] {
+  background: var(--text);
+  color: var(--page);
+  font-weight: 600;
+}
+
+.levels--bar .levels__option[data-focus-visible] {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.levels--bar .levels__count {
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+.levels--bar > .levels__desc {
+  display: block;
+  margin-top: 4px;
+  max-width: 640px;
+  color: var(--text-2);
+}
+
+.levels--list .levels__options {
+  flex-direction: column;
+}
+
+.levels--list .levels__option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  min-height: 56px;
+  padding: 8px 10px 8px 12px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+.levels--list .levels__option[data-selected] {
+  background: var(--pill);
+  box-shadow: inset 3px 0 0 var(--text);
+  font-weight: 600;
+}
+
+.levels--list .levels__count {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+.levels--list .levels__desc {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* Generations: − field + */
+.stepper__group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepper__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--pill);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.stepper__btn[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stepper__input {
+  box-sizing: border-box;
+  width: 48px;
+  height: 32px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-s);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: center;
+}
+
+.scope-sheet__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--control);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scope-sheet__key {
+  color: var(--text-2);
+}
+
+.scope-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scope-sheet .scope-root {
+  width: auto;
+}
+
+.scope-sheet .scope-root__field,
+.scope-sheet .stepper__btn,
+.scope-sheet .stepper__input {
+  height: 44px;
+}
+
+.scope-sheet .stepper__btn {
+  width: 44px;
+}
+
+.scope-sheet__steppers {
+  display: flex;
+  gap: 16px;
+}

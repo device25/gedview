@@ -87,7 +87,7 @@ test.describe('language and theme', () => {
     await dialog.getByText('English', {exact: true}).click();
     await expect(dialog).toBeHidden();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await expect(page.getByRole('tab', {name: 'Hourglass'})).toBeVisible();
+    await expect(page.getByRole('radio', {name: /^Direct line/})).toBeChecked();
     await expect(page.getByRole('button', {name: 'Open file'})).toBeVisible();
     await expect(
       page.getByText('sokolovy.gdz · GEDCOM 7.0.18 · 10 people'),

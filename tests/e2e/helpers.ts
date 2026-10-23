@@ -69,3 +69,11 @@ export async function moveMouseTo(page: Page, target: Locator) {
 /** The chart: an SVG group holding one button per person. */
 export const chart = (page: Page) =>
   page.getByRole('group', {name: /Стрелки — переход между родственниками/});
+
+/** Picks a level in «Кого показывать» (desktop header). */
+export async function chooseLevel(page: Page, name: string) {
+  await page.locator('.levels__option', {hasText: name}).first().click();
+  await expect(
+    page.getByRole('radio', {name: new RegExp(`^${name}`)}),
+  ).toBeChecked();
+}

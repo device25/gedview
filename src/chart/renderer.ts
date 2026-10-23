@@ -39,6 +39,8 @@ export interface RendererContext {
   measure: Measure;
   /** The selected person (read at every render: it changes when re-rooting). */
   selectedId: () => string;
+  /** The person the chart counts from; marked on their box. */
+  rootId?: string;
 }
 
 /** How a person is drawn and announced; independent of where. */
@@ -192,6 +194,7 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     // Drawn beside the button, not inside it: the initials are not part of
     // the accessible name, and clicks go through to the card underneath.
     this.portrait(parent, x + inset, id, photo, look.name, sexClass);
+    const isRoot = id === this.ctx.rootId;
     if (settings.showIds) {
       // Beside the button too: the id is not part of the person's name.
       parent
@@ -200,10 +203,13 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
         .attr('data-for', id)
         .attr('aria-hidden', 'true')
         .attr('x', x + inset + BOX_W - 12)
-        .attr('y', PAD + 12)
+        .attr('y', PAD + (isRoot ? 30 : 12))
         .attr('text-anchor', 'end')
         .text(id);
     }
+    const rootTag = isRoot
+      ? this.ctx.intl.formatMessage({id: 'chart.root'})
+      : undefined;
 
     // Name and dates under the portrait, across the whole width.
     const maxText = BOX_W - 2 * PAD;
@@ -228,12 +234,23 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       g.attr('aria-label', life ? `${look.name}, ${life}` : look.name);
       g.attr('aria-description', look.life);
     }
+    if (rootTag) g.attr('aria-label', `${g.attr('aria-label')}, ${rootTag}`);
     if (life) {
       g.append('text')
         .attr('class', 'gv-life')
         .attr('x', PAD)
         .attr('y', NAME_TOP + (lines.length - 1) * NAME_LINE + 3 + 16)
         .text(` ${life}`);
+    }
+    // Last in the box, so the text reads in the order of the accessible
+    // name; drawn in the portrait row so the card keeps its height.
+    if (rootTag) {
+      g.append('text')
+        .attr('class', 'gv-root-tag')
+        .attr('x', BOX_W - 12)
+        .attr('y', PAD + 12)
+        .attr('text-anchor', 'end')
+        .text(` ${rootTag}`);
     }
   }
 

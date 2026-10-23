@@ -102,6 +102,12 @@ a:hover {
   cursor: pointer;
 }
 
+.btn--ghost {
+  border: 1px solid var(--control);
+  background: transparent;
+  padding: 0 14px;
+}
+
 .btn[data-hovered] {
   background: color-mix(in srgb, var(--pill), var(--text) 9%);
 }

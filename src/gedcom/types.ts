@@ -518,7 +518,8 @@ export interface ChartSettings {
 /** Props of the chart component (part C). */
 export interface ChartProps {
   tree: LoadedTree;
-  view: ChartView;
+  /** Who the chart shows, counted from its root. */
+  scope: import('../model/scope').ChartScope;
   selectedId: string;
   onSelect: (indiId: string) => void;
   settings: ChartSettings;

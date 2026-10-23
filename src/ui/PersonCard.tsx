@@ -21,7 +21,7 @@ export function focusShowCard() {
 }
 
 export function PersonCard() {
-  const {tree, selectedId, cardOpen, cardExpanded, settings, lang} =
+  const {tree, selectedId, rootId, cardOpen, cardExpanded, settings, lang} =
     useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();
@@ -191,6 +191,14 @@ export function PersonCard() {
             )}
           </dl>
 
+          {rootId !== indi.id && (
+            <Button
+              className="btn btn--ghost card__reroot"
+              onPress={() => dispatch({type: 'reroot', id: indi.id})}
+            >
+              {t('card.reroot')}
+            </Button>
+          )}
           <div className="card__foot">
             <Button
               className="btn"

@@ -1,6 +1,6 @@
 import {expect, test, type Page} from '@playwright/test';
 import {generateGedcom} from '../../src/chart/test-tree';
-import {chart, expectNoAxeViolations, openDemo} from './helpers';
+import {chart, chooseLevel, expectNoAxeViolations, openDemo} from './helpers';
 
 const person = (page: Page, name: RegExp | string) =>
   chart(page).getByRole('button', {name});
@@ -51,10 +51,13 @@ test.describe('chart views', () => {
     await expect(ivan).toHaveAccessibleDescription(
       /6\u00a0\(18\)\u00a0апреля 1889\u00a0— 1957/,
     );
-    await expect(chart(page).locator('path.link')).toHaveCount(4);
+    await expect(chart(page).locator('path.link')).toHaveCount(3);
 
-    await page.getByRole('tab', {name: 'Все родственники'}).click();
-    await expect(person(page, /^Иван Петрович Соколов/)).toHaveAttribute(
+    // Counted from Александра, «все родственники» take in both sides.
+    await page.evaluate(() => {
+      location.hash = '#id=I6&level=all';
+    });
+    await expect(person(page, /^Александра.*Точка отсчёта/)).toHaveAttribute(
       'aria-current',
       'true',
     );
@@ -152,7 +155,7 @@ test.describe('disputed and disproven links', () => {
     await expect(dashed).toHaveCSS('stroke-width', '2px');
     // The other links are plain.
     const solid = chart(page).locator('path.link[data-look="solid"]');
-    await expect(solid).toHaveCount(3);
+    await expect(solid).toHaveCount(2);
     for (const el of await solid.all()) {
       await expect(el).toHaveCSS('stroke-dasharray', 'none');
       await expect(el).toHaveCSS('stroke-width', '1.5px');
@@ -172,7 +175,7 @@ test.describe('disputed and disproven links', () => {
     await openDemo(page);
     const ivan = person(page, /^Иван Петрович Соколов/);
     await expect(ivan).toHaveAccessibleName(
-      'Иван Петрович Соколов, 1889—1957, Связь с родителями спорная',
+      'Иван Петрович Соколов, 1889—1957, Точка отсчёта, Связь с родителями спорная',
     );
     // The full dates that do not fit on the box and the dispute's phrase.
     await expect(ivan).toHaveAccessibleDescription(
@@ -239,6 +242,8 @@ test.describe('keyboard', () => {
     await openDemo(page);
     await person(page, /^Иван Петрович/).focus();
     await page.keyboard.press('ArrowUp');
+    await expect(person(page, /^Пётр Ильич/)).toBeFocused();
+    await page.keyboard.press('ArrowRight');
     await expect(person(page, /^Мария Фёдоровна/)).toBeFocused();
     await page.keyboard.press('ArrowLeft');
     await expect(person(page, /^Пётр Ильич/)).toBeFocused();
@@ -491,8 +496,8 @@ test.describe('zoom and pan', () => {
 
   test('keeps working after a view change and a resize', async ({page}) => {
     await openDemo(page);
-    await page.getByRole('tab', {name: 'Все родственники'}).click();
-    await expect(chart(page).getByRole('button')).toHaveCount(8);
+    await chooseLevel(page, 'Братья и сёстры');
+    await expect(chart(page).getByRole('button')).toHaveCount(6);
     await page.setViewportSize({width: 900, height: 700});
     await page.getByRole('button', {name: 'Приблизить'}).click();
     await expect
@@ -502,15 +507,16 @@ test.describe('zoom and pan', () => {
 });
 
 test.describe('accessibility of the chart', () => {
-  for (const [tab, name] of [
-    ['Песочные часы', 'hourglass'],
-    ['Все родственники', 'relatives'],
+  for (const [level, name] of [
+    ['Прямая линия', 'direct'],
+    ['Все родственники', 'all'],
   ] as const) {
-    test(`axe is clean on the ${name} view, light and dark`, async ({page}) => {
+    test(`axe is clean on the ${name} level, light and dark`, async ({
+      page,
+    }) => {
       await page.emulateMedia({colorScheme: 'light'});
       await openDemo(page);
-      await page.getByRole('tab', {name: tab}).click();
-      await expect(page.getByRole('tabpanel', {name: tab})).toBeVisible();
+      if (name !== 'direct') await chooseLevel(page, level);
       await expect(chart(page).getByRole('button').first()).toBeVisible();
       await expectNoAxeViolations(page);
       await page.emulateMedia({colorScheme: 'dark'});
@@ -529,7 +535,7 @@ test.describe('accessibility of the chart', () => {
     await openDemo(page);
     await expect(chart(page)).toHaveAttribute('role', 'group');
     await expect(chart(page)).toHaveAccessibleName(
-      'Песочные часы. Стрелки — переход между родственниками, Enter — выбрать.',
+      'Прямая линия. Стрелки — переход между родственниками, Enter — выбрать.',
     );
   });
 });
@@ -543,16 +549,14 @@ test.describe('real and large trees', () => {
       .getByTestId('file-input')
       .setInputFiles('tests/fixtures/gedcom70/maximal70.ged');
     await expect(chart(page).getByRole('button').first()).toBeVisible();
-    for (const tab of ['Все родственники', 'Песочные часы']) {
-      await page.getByRole('tab', {name: tab}).click();
+    for (const level of ['Все родственники', 'Прямая линия']) {
+      await chooseLevel(page, level);
       await expect(chart(page).getByRole('button').first()).toBeVisible();
     }
     expect(errors).toEqual([]);
   });
 
-  test('a 2000-person tree draws in the hourglass and relatives views', async ({
-    page,
-  }) => {
+  test('a 2000-person tree draws all relatives', async ({page}) => {
     test.setTimeout(60_000);
     await page.goto('/');
     await page.getByTestId('file-input').setInputFiles({
@@ -561,13 +565,10 @@ test.describe('real and large trees', () => {
       buffer: Buffer.from(generateGedcom(2000)),
     });
     await expect(chart(page).getByRole('button').first()).toBeVisible();
-    await page.evaluate(() => {
-      location.hash = '#view=hourglass&id=I3';
-    });
-    await expect(chart(page).getByRole('button').nth(1000)).toBeAttached();
-
     const started = Date.now();
-    await page.getByRole('tab', {name: 'Все родственники'}).click();
+    await page.evaluate(() => {
+      location.hash = '#id=I3&level=all';
+    });
     await expect(chart(page).getByRole('button').nth(1500)).toBeAttached();
     expect(Date.now() - started).toBeLessThan(15_000);
 
@@ -597,7 +598,7 @@ test.describe('chart on a phone', () => {
       }),
     ).toBeVisible();
     await expect.poll(() => offCenter(page, 'I4')).toBeLessThan(2);
-    // The same chart, re-rooted on her, still holds Ivan with his label.
+    // Selecting does not re-root: the chart still holds Ivan with his label.
     await expect(chart(page).locator('.gv-pill')).toHaveCount(1);
     await chart(page).locator('.gv-pill').dispatchEvent('click');
     await expect(page.locator('.gv-tip')).toContainText(

@@ -11,16 +11,21 @@ test.describe('demo tree', () => {
     await expect(
       page.getByText('sokolovy.gdz · GEDCOM 7.0.18 · 10 человек'),
     ).toBeVisible();
-    await expect(page.getByRole('tablist', {name: 'Вид схемы'})).toBeVisible();
     await expect(
-      page.getByRole('tab', {name: 'Песочные часы'}),
-    ).toHaveAttribute('aria-selected', 'true');
+      page.getByRole('radiogroup', {name: 'Кого показывать'}),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('radio', {name: /^Прямая линия/}),
+    ).toBeChecked();
+    await expect(
+      page.getByRole('combobox', {name: 'От кого считать'}),
+    ).toHaveValue('Иван Петрович Соколов');
 
-    // Ivan, his parents, his wife with her parents and their two children.
-    await expect(chart(page).getByRole('button')).toHaveCount(8);
+    // The direct line from Ivan: his parents, his wife and their children.
+    await expect(chart(page).getByRole('button')).toHaveCount(6);
     await expect(
       chart(page).getByRole('button', {
-        name: /^Иван Петрович Соколов, 1889—1957/,
+        name: /^Иван Петрович Соколов, 1889—1957, Точка отсчёта/,
       }),
     ).toHaveAttribute('aria-current', 'true');
 
@@ -48,7 +53,7 @@ test.describe('demo tree', () => {
     await expect(
       page.getByRole('heading', {level: 2, name: 'Пётр Ильич Соколов'}),
     ).toBeVisible();
-    await expect(page).toHaveURL(/#view=hourglass&id=I2$/);
+    await expect(page).toHaveURL(/#id=I2&root=I1&level=direct&up=4&down=3$/);
     await expect(page.getByRole('complementary')).toContainText('1858—1921');
   });
 
@@ -72,22 +77,39 @@ test.describe('demo tree', () => {
   test('the hash contains no names', async ({page}) => {
     await openDemo(page);
     const hash = new URL(page.url()).hash;
-    expect(hash).toBe('#view=hourglass&id=I1');
+    expect(hash).toBe('#id=I1&level=direct&up=4&down=3');
     expect(decodeURIComponent(page.url())).not.toContain('Соколов');
   });
 
-  test('view tabs are a real tablist with arrow-key navigation', async ({
+  test('the levels are a radio group with arrow keys; the root can be changed', async ({
     page,
   }) => {
     await openDemo(page);
-    await page.getByRole('tab', {name: 'Песочные часы'}).focus();
+    await page.getByRole('radio', {name: /^Прямая линия/}).focus();
     await page.keyboard.press('ArrowRight');
     await expect(
-      page.getByRole('tab', {name: 'Все родственники'}),
-    ).toHaveAttribute('aria-selected', 'true');
-    await expect(page).toHaveURL(/view=relatives/);
-    await expect(page.getByRole('tabpanel')).toBeVisible();
-    await expect(page.getByRole('tab', {name: 'Веер'})).toHaveCount(0);
+      page.getByRole('radio', {name: /^Братья и сёстры/}),
+    ).toBeChecked();
+    await expect(page).toHaveURL(/level=siblings/);
+    // Every option says how many people it draws.
+    await expect(
+      page.getByRole('radio', {name: /^Прямая линия\s*, 6 человек$/}),
+    ).toBeAttached();
+
+    // «Считать от этого человека» in the card re-roots the chart.
+    await chart(page)
+      .getByRole('button', {name: /^Николай Иванович/})
+      .click();
+    await page.getByRole('button', {name: 'Считать от этого человека'}).click();
+    await expect(
+      page.getByRole('combobox', {name: 'От кого считать'}),
+    ).toHaveValue('Николай Иванович Соколов');
+    await expect(
+      chart(page).getByRole('button', {
+        name: /^Николай Иванович.*Точка отсчёта/,
+      }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/#id=I5&level=siblings/);
   });
 
   test('the card can be minimised, closed and shown again, and Esc closes it', async ({

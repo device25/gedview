@@ -7,15 +7,13 @@ import {zoom, zoomIdentity, zoomTransform, type ZoomBehavior} from 'd3-zoom';
 import type {IntlShape} from 'react-intl';
 import {
   HIDE_TIME_MS,
-  HourglassChart,
   JsonDataProvider,
   MOVE_TIME_MS,
   RelativesChart,
-  type Chart,
-  type ChartOptions,
 } from 'topola';
-import type {ChartSettings, ChartView, LoadedTree} from '../gedcom/types';
+import type {ChartSettings, LoadedTree} from '../gedcom/types';
 import {buildChartData} from '../model/chart';
+import {scopePeople, type ChartScope} from '../model/scope';
 import {ZOOM_MAX, ZOOM_MIN} from '../store/reducer';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {isNavKey, navigate, type NavBox, type NavEdge} from './nav';
@@ -45,17 +43,12 @@ export interface EngineCallbacks {
 
 export interface EngineInput {
   tree: LoadedTree;
-  view: ChartView;
+  scope: ChartScope;
   settings: ChartSettings;
   intl: IntlShape;
   selectedId: string;
   zoom: number;
 }
-
-const CHARTS: Record<ChartView, new (options: ChartOptions) => Chart> = {
-  hourglass: HourglassChart,
-  relatives: RelativesChart,
-};
 
 /** Quiet time after the last wheel/drag event before the scale is reported. */
 const REPORT_DELAY_MS = 120;
@@ -117,7 +110,8 @@ export class ChartEngine {
   private pendingFit = false;
   private draws = 0;
 
-  private built?: Pick<EngineInput, 'tree' | 'view' | 'settings'> & {
+  private built?: Pick<EngineInput, 'tree' | 'settings'> & {
+    scope: string;
     locale: string;
   };
   private renderer?: GedviewRenderer;
@@ -258,12 +252,13 @@ export class ChartEngine {
   // ------------------------------------------------------------ drawing
 
   private draw(input: EngineInput): void {
-    const {tree, view, settings, intl, selectedId} = input;
+    const {tree, scope, settings, intl, selectedId} = input;
+    const scopeKey = JSON.stringify(scope);
     const prev = this.built;
     const rebuild =
       !prev ||
       prev.tree !== tree ||
-      prev.view !== view ||
+      prev.scope !== scopeKey ||
       prev.settings !== settings ||
       prev.locale !== intl.locale;
     if (!rebuild && selectedId === this.currentSelected) return;
@@ -273,13 +268,17 @@ export class ChartEngine {
     if (rebuild) {
       this.inner.selectAll('*').remove();
       this.pills.clear();
-      this.data = new JsonDataProvider(buildChartData(tree, settings));
+      // One layout for every level: topola's relatives chart, fed with the
+      // people of the scope only.
+      const keep = scopePeople(tree, settings, scope);
+      this.data = new JsonDataProvider(buildChartData(tree, settings, {keep}));
       const ctx: RendererContext = {
         tree,
         settings,
         intl,
         measure: canvasMeasure(`500 15px ${FONT_FAMILY}`, 15),
         selectedId: () => this.currentSelected,
+        rootId: scope.rootId,
       };
       this.renderer = new GedviewRenderer(
         {data: this.data, horizontal: false},
@@ -291,17 +290,17 @@ export class ChartEngine {
     this.currentSelected = selectedId;
     const renderer = this.renderer!;
     const animate = !rebuild && !prefersReducedMotion();
-    const chart = new CHARTS[view]({
+    const chart = new RelativesChart({
       data: this.data!,
       renderer,
       svgSelector: `#${this.innerId}`,
-      startIndi: selectedId,
+      startIndi: scope.rootId,
       animate,
       horizontal: false,
     });
     const info = chart.render();
     this.chartSize = {w: info.size[0], h: info.size[1]};
-    this.built = {tree, view, settings, locale: intl.locale};
+    this.built = {tree, scope: scopeKey, settings, locale: intl.locale};
     this.inner.select('g').selectAll('.gv-pill').remove();
     this.pills.clear();
 
