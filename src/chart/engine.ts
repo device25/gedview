@@ -101,6 +101,11 @@ function fontReady(): Promise<void> {
 
 let instances = 0;
 
+/** Family lines closer than this at one height count as running along
+ *  each other; such lines are moved this far apart. */
+const LANE_GAP = 4;
+const LANE_STEP = 7;
+
 /** Whether a person was born before the root; undefined = not known. */
 function olderThan(tree: LoadedTree, rootId: string) {
   const born = (id: string) =>
@@ -345,6 +350,7 @@ export class ChartEngine {
     this.annotate(links, input);
     this.styleLinks(input);
     this.routeCopies(renderer);
+    this.laneBars();
 
     const target = this.boxes.find((b) => b.key === this.selectedKey);
     if (target) {
@@ -371,6 +377,7 @@ export class ChartEngine {
       if (token === this.token && !this.destroyed) {
         // An animated update may have moved the paths back: route again.
         this.routeCopies(renderer);
+        this.laneBars();
         this.drawPills(links, input);
       }
     });
@@ -495,6 +502,79 @@ export class ChartEngine {
           ? `M${x1} ${bottom}V${lane}H${hop - 6}M${hop + 6} ${lane}H${x2}V${bottom}`
           : `M${x1} ${bottom}V${lane}H${x2}V${bottom}`;
       });
+  }
+
+  /**
+   * Families whose lines to their children would run along each other at
+   * one height get heights of their own, a few pixels apart, so each line
+   * can be followed to its children.
+   */
+  private laneBars(): void {
+    interface Bar {
+      y: number;
+      x0: number;
+      x1: number;
+      /** Shortest drop from the parents to a child. */
+      span: number;
+      paths: Array<{el: SVGPathElement; pts: number[][]}>;
+    }
+    const bars = new Map<string, Bar>();
+    this.inner
+      .select('g')
+      .selectAll<SVGPathElement, unknown>('path.link:not(.additional-marriage)')
+      .each(function () {
+        const n = (this.getAttribute('d') ?? '').match(/-?\d+(?:\.\d+)?/g);
+        if (n?.length !== 8) return;
+        const v = n.map(Number);
+        const pts = [0, 2, 4, 6].map((i) => [v[i]!, v[i + 1]!]);
+        const [a, b, c, z] = pts as [number[], number[], number[], number[]];
+        if (b[1] !== c[1] || a[0] !== b[0] || c[0] !== z[0]) return;
+        // A family's links all start at its parents (the upper end).
+        const top = a[1]! < z[1]! ? a : z;
+        const key = `${Math.round(top[0]!)} ${Math.round(top[1]!)}`;
+        const bar = bars.get(key) ?? {
+          y: b[1]!,
+          x0: Infinity,
+          x1: -Infinity,
+          span: Infinity,
+          paths: [],
+        };
+        bar.x0 = Math.min(bar.x0, b[0]!, c[0]!);
+        bar.x1 = Math.max(bar.x1, b[0]!, c[0]!);
+        bar.span = Math.min(bar.span, Math.abs(z[1]! - a[1]!));
+        bar.paths.push({el: this, pts});
+        bars.set(key, bar);
+      });
+    const levels = new Map<number, Bar[]>();
+    for (const bar of bars.values()) {
+      const y = Math.round(bar.y);
+      levels.set(y, [...(levels.get(y) ?? []), bar]);
+    }
+    for (const level of levels.values()) {
+      level.sort((p, q) => p.x0 - q.x0);
+      const ends: number[] = [];
+      const lane = new Map<Bar, number>();
+      for (const bar of level) {
+        let i = ends.findIndex((end) => end < bar.x0 - LANE_GAP);
+        if (i === -1) i = ends.push(bar.x1) - 1;
+        else ends[i] = bar.x1;
+        lane.set(bar, i);
+      }
+      if (ends.length < 2) continue;
+      const span = Math.min(...level.map((b) => b.span));
+      const step = Math.min(LANE_STEP, (span * 0.5) / ends.length);
+      for (const bar of level) {
+        const dy = (lane.get(bar)! - (ends.length - 1) / 2) * step;
+        for (const {el, pts} of bar.paths) {
+          const [a, b, c, z] = pts as [number[], number[], number[], number[]];
+          const y = b[1]! + dy;
+          el.setAttribute(
+            'd',
+            `M ${a[0]} ${a[1]} L ${b[0]} ${y}, ${c[0]} ${y}, ${z[0]} ${z[1]}`,
+          );
+        }
+      }
+    }
   }
 
   /** Marks every path with how its link is drawn (CSS does the rest). */

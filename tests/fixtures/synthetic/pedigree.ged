@@ -1,0 +1,147 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+1 LANG ru
+0 @I1@ INDI
+1 NAME Роман Олегович /Ершов/
+1 SEX M
+1 BIRT
+2 DATE 1950
+1 FAMC @F1@
+0 @I2@ INDI
+1 NAME Олег Петрович /Ершов/
+1 SEX M
+1 BIRT
+2 DATE 1922
+1 FAMS @F1@
+1 FAMC @F2@
+0 @I3@ INDI
+1 NAME Нина Ивановна /Ершова/
+1 SEX F
+1 BIRT
+2 DATE 1925
+1 FAMS @F1@
+1 FAMC @F3@
+0 @I4@ INDI
+1 NAME Пётр Ильич /Ершов/
+1 SEX M
+1 BIRT
+2 DATE 1895
+1 FAMC @F6@
+1 FAMS @F2@
+0 @I5@ INDI
+1 NAME Анна Сергеевна /Ершова/
+1 SEX F
+1 BIRT
+2 DATE 1898
+1 FAMS @F2@
+0 @I6@ INDI
+1 NAME Иван Кузьмич /Лапин/
+1 SEX M
+1 BIRT
+2 DATE 1897
+1 FAMS @F3@
+1 FAMC @F4@
+0 @I7@ INDI
+1 NAME Дарья Фёдоровна /Лапина/
+1 SEX F
+1 BIRT
+2 DATE 1900
+1 FAMS @F3@
+1 FAMC @F5@
+0 @I8@ INDI
+1 NAME Кузьма Ильич /Лапин/
+1 SEX M
+1 BIRT
+2 DATE 1870
+1 FAMS @F4@
+0 @I9@ INDI
+1 NAME Мария Ивановна /Лапина/
+1 SEX F
+1 BIRT
+2 DATE 1872
+1 FAMS @F4@
+0 @I10@ INDI
+1 NAME Фёдор Ильич /Гусев/
+1 SEX M
+1 BIRT
+2 DATE 1868
+1 FAMS @F5@
+0 @I11@ INDI
+1 NAME Ольга Петровна /Гусева/
+1 SEX F
+1 BIRT
+2 DATE 1871
+1 FAMS @F5@
+0 @I12@ INDI
+1 NAME Степан Кузьмич /Лапин/
+1 SEX M
+1 BIRT
+2 DATE 1899
+1 FAMC @F4@
+0 @I13@ INDI
+1 NAME Глеб Кузьмич /Лапин/
+1 SEX M
+1 BIRT
+2 DATE 1902
+1 FAMC @F4@
+0 @I14@ INDI
+1 NAME Вера Фёдоровна /Гусева/
+1 SEX F
+1 BIRT
+2 DATE 1903
+1 FAMC @F5@
+0 @I15@ INDI
+1 NAME Зоя Фёдоровна /Гусева/
+1 SEX F
+1 BIRT
+2 DATE 1906
+1 FAMC @F5@
+0 @I16@ INDI
+1 NAME Илья Петрович /Ершов/
+1 SEX M
+1 BIRT
+2 DATE 1928
+1 FAMC @F2@
+0 @F1@ FAM
+1 HUSB @I2@
+1 WIFE @I3@
+1 CHIL @I1@
+0 @F2@ FAM
+1 HUSB @I4@
+1 WIFE @I5@
+1 CHIL @I2@
+1 CHIL @I16@
+0 @F3@ FAM
+1 HUSB @I6@
+1 WIFE @I7@
+1 CHIL @I3@
+0 @F4@ FAM
+1 HUSB @I8@
+1 WIFE @I9@
+1 CHIL @I6@
+1 CHIL @I12@
+1 CHIL @I13@
+0 @F5@ FAM
+1 HUSB @I10@
+1 WIFE @I11@
+1 CHIL @I7@
+1 CHIL @I14@
+1 CHIL @I15@
+0 @I17@ INDI
+1 NAME Илья /Ершов/
+1 SEX M
+1 BIRT
+2 DATE 1866
+1 FAMS @F6@
+0 @I18@ INDI
+1 NAME Евдокия /Ершова/
+1 SEX F
+1 BIRT
+2 DATE 1869
+1 FAMS @F6@
+0 @F6@ FAM
+1 HUSB @I17@
+1 WIFE @I18@
+1 CHIL @I4@
+0 TRLR
