@@ -55,9 +55,11 @@ export type Action =
   | {type: 'zoom'; mode: 'in' | 'out' | 'fit'}
   | {type: 'setZoom'; zoom: number};
 
-export const ZOOM_MIN = 0.25;
+/** Large charts only fit at small scales, so the range is wide. */
+export const ZOOM_MIN = 0.05;
 export const ZOOM_MAX = 4;
-export const ZOOM_STEP = 0.25;
+/** Each zoom button press multiplies (or divides) the scale by this. */
+export const ZOOM_STEP = 1.25;
 
 export function createInitialState(
   persisted: Persisted,
@@ -156,8 +158,8 @@ export function reducer(state: AppState, action: Action): AppState {
       if (action.mode === 'fit') {
         return {...state, zoom: 1, fitRequest: state.fitRequest + 1};
       }
-      const delta = action.mode === 'in' ? ZOOM_STEP : -ZOOM_STEP;
-      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom + delta));
+      const factor = action.mode === 'in' ? ZOOM_STEP : 1 / ZOOM_STEP;
+      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom * factor));
       return {...state, zoom};
     }
     case 'setZoom':

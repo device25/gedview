@@ -136,6 +136,13 @@ describe('settings, theme, zoom', () => {
     expect(s.lang).toBe('ru');
   });
 
+  it("zoom buttons scale by a fixed factor and are each other's inverse", () => {
+    let s = reducer(initial(), {type: 'zoom', mode: 'in'});
+    expect(s.zoom).toBe(1.25);
+    s = reducer(s, {type: 'zoom', mode: 'out'});
+    expect(s.zoom).toBeCloseTo(1, 10);
+  });
+
   it('clamps zoom and resets it on fit', () => {
     let s = initial();
     for (let i = 0; i < 30; i++) s = reducer(s, {type: 'zoom', mode: 'in'});
