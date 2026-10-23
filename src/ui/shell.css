@@ -1,0 +1,69 @@
+.app {
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  background: var(--page);
+  color: var(--text);
+}
+
+.main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100dvh;
+  overflow: hidden;
+  outline: none;
+}
+
+.app[data-mobile] {
+  flex-direction: column;
+}
+
+.app[data-mobile] .main {
+  height: calc(100dvh - 72px);
+}
+
+.banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(600px, calc(100% - 32px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 6px 24px var(--shadow);
+  transform: translateX(-50%);
+}
+
+.banner--error {
+  background: var(--warn-bg);
+  box-shadow:
+    0 0 0 2px var(--warn-line),
+    0 6px 24px var(--shadow);
+}
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--scrim);
+  pointer-events: none;
+}
+
+.drop-overlay__box {
+  padding: 40px 56px;
+  border: 3px dashed var(--accent);
+  border-radius: 24px;
+  background: var(--card);
+  font-size: 20px;
+  font-weight: 500;
+}

@@ -1,0 +1,102 @@
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.check__box {
+  display: flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--text-2);
+  border-radius: 5px;
+  color: transparent;
+}
+
+.check__box svg {
+  margin: -2px;
+}
+
+.check[data-selected] .check__box {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--card);
+}
+
+.check[data-focus-visible] .check__box {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.select__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 132px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--pill);
+  cursor: pointer;
+}
+
+.select__button[data-hovered] {
+  background: color-mix(in srgb, var(--pill), var(--text) 9%);
+}
+
+.select__popover {
+  min-width: var(--trigger-width);
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 10px 32px var(--shadow);
+}
+
+.select__list {
+  outline: none;
+}
+
+.select__item {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.select__item[data-focused],
+.select__item[data-hovered] {
+  background: var(--pill);
+}
+
+.select__item[data-selected] {
+  font-weight: 500;
+}
+
+@media (max-width: 767px) {
+  .select__button,
+  .select__item {
+    min-height: 44px;
+  }
+
+  .check {
+    min-height: 44px;
+  }
+}
