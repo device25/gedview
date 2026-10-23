@@ -40,6 +40,11 @@ export interface AppState {
    *  its header, so the chart keeps the screen. */
   sheetUp: boolean;
   fullCardOpen: boolean;
+  /** The part of the full card to open at (its section id). */
+  fullCardSection?: string;
+  /** The media viewer: whose media, which one, and whether restricted
+   *  ones were revealed on the card it was opened from. */
+  viewer: {id: string; index: number; revealed: boolean} | null;
   urlDialogOpen: boolean;
   /** Chart zoom factor; applied by the chart. */
   zoom: number;
@@ -67,7 +72,9 @@ export type Action =
   | {type: 'setCardOpen'; open: boolean}
   | {type: 'toggleCardExpanded'}
   | {type: 'setSheetUp'; up: boolean}
-  | {type: 'setFullCard'; open: boolean}
+  | {type: 'setFullCard'; open: boolean; section?: string}
+  | {type: 'openViewer'; id: string; index: number; revealed?: boolean}
+  | {type: 'closeViewer'}
   | {type: 'setUrlDialog'; open: boolean}
   | {type: 'zoom'; mode: 'in' | 'out' | 'fit'}
   | {type: 'setZoom'; zoom: number};
@@ -96,6 +103,7 @@ export function createInitialState(
     cardExpanded: true,
     sheetUp: false,
     fullCardOpen: false,
+    viewer: null,
     urlDialogOpen: false,
     zoom: 1,
     fitRequest: 0,
@@ -235,7 +243,22 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'toggleCardExpanded':
       return {...state, cardExpanded: !state.cardExpanded};
     case 'setFullCard':
-      return {...state, fullCardOpen: action.open};
+      return {
+        ...state,
+        fullCardOpen: action.open,
+        fullCardSection: action.open ? action.section : undefined,
+      };
+    case 'openViewer':
+      return {
+        ...state,
+        viewer: {
+          id: action.id,
+          index: action.index,
+          revealed: action.revealed ?? false,
+        },
+      };
+    case 'closeViewer':
+      return {...state, viewer: null};
     case 'setUrlDialog':
       return {...state, urlDialogOpen: action.open};
     case 'zoom': {

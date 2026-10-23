@@ -26,6 +26,83 @@
   gap: 10px;
 }
 
+/* The portrait opens the media viewer. */
+.card__portrait {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  background: var(--pill);
+  cursor: pointer;
+  outline: none;
+}
+
+.card__portrait[data-focus-visible],
+.card-media__item[data-focus-visible] {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.card__portrait-img,
+.card-media__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-media__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-media__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  outline: none;
+}
+
+.card-media__more {
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Linked images are off: says why and switches them on. */
+.remote-off {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--pill);
+  font-size: 13px;
+}
+
+.remote-off p {
+  margin: 0;
+}
+
 .card__title {
   flex: 1;
   min-width: 0;

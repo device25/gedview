@@ -6,6 +6,8 @@ import {useAppState, useDispatch, useIsMobile} from '../store';
 import {EventItem} from './events';
 import {lifeSpan} from './format';
 import {Tip} from './Tip';
+import {mediaEntries, portraitOf} from './media';
+import {MediaImage, MediaStrip} from './MediaParts';
 import {Icon} from './icons';
 import {localName} from './lang';
 import {PersonLink} from './PersonLink';
@@ -96,6 +98,13 @@ export function PersonCard() {
   const hide = settings.hideRestricted && revealedFor !== indi.id;
   const events = splitByResn(items, (i) => i.event, hide);
   const media = splitByResn(indi.media, (m) => m, hide);
+  const entries = mediaEntries(tree, indi, {
+    hide,
+    allowRemote: settings.loadRemoteMedia,
+  });
+  const portrait = portraitOf(entries);
+  const view = (index: number) =>
+    dispatch({type: 'openViewer', id: indi.id, index, revealed: !hide});
   const notes = splitByResn(
     indi.notes,
     (n) => n as {restrictions?: readonly string[]}, // see FullCard
@@ -177,6 +186,18 @@ export function PersonCard() {
         <span />
       </Button>
       <header className="card__head" onPointerDown={swipeStart}>
+        {portrait && (
+          <Button
+            className="card__portrait"
+            aria-label={intl.formatMessage(
+              {id: 'card.photo'},
+              {title: portrait.entry.title},
+            )}
+            onPress={() => view(portrait.index)}
+          >
+            <MediaImage entry={portrait.entry} className="card__portrait-img" />
+          </Button>
+        )}
         {/* On a phone a tap on the name raises the sheet; the handle is the
             control for keyboards and screen readers. */}
         <div
@@ -274,6 +295,16 @@ export function PersonCard() {
               <Group label={t('rel.children')} people={rel.children} />
             )}
           </dl>
+
+          {entries.length > 0 && (
+            <MediaStrip
+              entries={entries}
+              onView={view}
+              onMore={() =>
+                dispatch({type: 'setFullCard', open: true, section: 'media'})
+              }
+            />
+          )}
 
           {rootId !== indi.id && (
             <Button

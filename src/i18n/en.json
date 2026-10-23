@@ -449,5 +449,18 @@
   "settings.cardColor.decade": "By decade of birth",
   "legend.decades": "Card colour is the decade of birth, from the {first} to the {last}",
   "legend.decadesUnknown": "white — year unknown",
-  "legend.decade": "{decade}s"
+  "legend.decade": "{decade}s",
+  "card.photo": "Photo: {title}. Open the viewer",
+  "card.media": "Media",
+  "card.mediaOpen": "Open the viewer: {title}",
+  "card.mediaMore": "{count} more",
+  "media.remoteTile": "Images by link are not loaded: a request would tell another site who is looking.",
+  "media.remoteEnable": "Show images by link",
+  "media.remoteHosts": "Files will be loaded from {hosts}",
+  "viewer.count": "{at} of {count}",
+  "viewer.original": "Open the original",
+  "viewer.close": "Close the viewer",
+  "viewer.prev": "Previous file",
+  "viewer.next": "Next file",
+  "viewer.noPreview": "No preview"
 }

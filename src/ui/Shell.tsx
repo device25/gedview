@@ -3,6 +3,7 @@ import {Button} from 'react-aria-components';
 import {useIntl} from 'react-intl';
 import {useAppState, useDispatch, useIsMobile} from '../store';
 import {FullCard} from './FullCard';
+import {MediaViewer} from './MediaViewer';
 import {useLoader} from './loader';
 import {focusShowCard} from './PersonCard';
 import {MobileNav, Rail} from './Rail';
@@ -174,6 +175,7 @@ export function Shell() {
       <DropOverlay />
       <UrlDialog />
       <FullCard />
+      <MediaViewer />
     </div>
   );
 }

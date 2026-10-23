@@ -1,0 +1,162 @@
+/* The media viewer: photos read best on near-black, in either theme. */
+.viewer-overlay {
+  --viewer-bg: rgba(12, 12, 12, 0.97);
+  --viewer-text: #f1f0ee;
+  --viewer-text-2: #c9c7c2;
+  --viewer-btn: rgba(255, 255, 255, 0.12);
+  --viewer-btn-hover: rgba(255, 255, 255, 0.22);
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  background: var(--viewer-bg);
+}
+
+.viewer,
+.viewer__dialog {
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+.viewer__dialog {
+  display: flex;
+  flex-direction: column;
+  color: var(--viewer-text);
+}
+
+.viewer__bar {
+  display: flex;
+  flex: none;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 16px 12px 24px;
+}
+
+.viewer__caption {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.viewer__title {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.viewer__count,
+.viewer__link {
+  font-size: 14px;
+  color: var(--viewer-text-2);
+}
+
+.viewer__link {
+  flex: none;
+}
+
+.viewer__link:hover {
+  color: var(--viewer-text);
+}
+
+.viewer__btn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--viewer-btn);
+  color: var(--viewer-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.viewer__btn[data-hovered] {
+  background: var(--viewer-btn-hover);
+}
+
+.viewer__btn[data-focus-visible],
+.viewer__link:focus-visible {
+  outline: 3px solid #8fb0f0;
+  outline-offset: 2px;
+}
+
+.viewer__stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 72px 24px;
+  touch-action: pan-y;
+}
+
+.viewer__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.viewer__prev,
+.viewer__next {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.viewer__prev {
+  left: 16px;
+}
+
+.viewer__next {
+  right: 16px;
+}
+
+.viewer__file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  color: var(--viewer-text-2);
+}
+
+.viewer__kind {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--viewer-text);
+}
+
+.viewer .remote-off {
+  max-width: 420px;
+  color: var(--viewer-text);
+  text-align: center;
+}
+
+.viewer .remote-off .muted {
+  color: var(--viewer-text-2);
+}
+
+@media (max-width: 767px) {
+  .viewer__bar {
+    padding: 8px 8px 8px 16px;
+  }
+
+  .viewer__stage {
+    padding: 0 0 16px;
+  }
+
+  .viewer__prev,
+  .viewer__next {
+    top: auto;
+    bottom: 16px;
+    translate: none;
+  }
+}
