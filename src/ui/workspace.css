@@ -114,6 +114,26 @@
   gap: 8px;
 }
 
+/* The decade scale of the cards, oldest to youngest. */
+.legend__decades {
+  flex: none;
+  width: 64px;
+  height: 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--decade-0),
+    var(--decade-1),
+    var(--decade-2),
+    var(--decade-3),
+    var(--decade-4),
+    var(--decade-5),
+    var(--decade-6),
+    var(--decade-7)
+  );
+}
+
 .zoom {
   position: absolute;
   right: 24px;

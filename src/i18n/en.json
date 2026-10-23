@@ -443,5 +443,11 @@
   "map.spread.born": "Born here",
   "map.none.title": "The places in this file have no coordinates",
   "map.none.text": "Gedview shows places by the coordinates in the file and looks nothing up online. Add a latitude and a longitude to the places in the program where the tree is kept and open the file again.",
-  "map.none.places": "Places in the file: {n}"
+  "map.none.places": "Places in the file: {n}",
+  "settings.cardColor": "Card colour",
+  "settings.cardColor.none": "None",
+  "settings.cardColor.decade": "By decade of birth",
+  "legend.decades": "Card colour is the decade of birth, from the {first} to the {last}",
+  "legend.decadesUnknown": "white — year unknown",
+  "legend.decade": "{decade}s"
 }
