@@ -1,73 +1,85 @@
 # Gedview
 
-Просмотрщик генеалогических деревьев в браузере с полной поддержкой
+A browser-based genealogy tree viewer with full support for
 [FamilySearch GEDCOM 7.0](https://gedcom.io/specifications/FamilySearchGEDCOMv7.html)
-(и чтением GEDCOM 5.5.1).
+(and reading GEDCOM 5.5.1).
 
-Файл открывается и разбирается прямо в браузере: Gedview не отправляет
-ваше дерево никуда, не использует аналитику и не обращается к сторонним
-сайтам, кроме адреса, с которого вы сами попросили загрузить файл.
+Files are opened and parsed entirely in the browser: Gedview never uploads
+your tree, uses no analytics and makes no third-party requests except to the
+address you asked it to load a file from.
 
-> Работа в процессе: см. план в issues и `docs/`.
+> Work in progress.
 
-## Возможности (целевые)
+## Features (target)
 
-- GEDCOM 7.0: календари (`JULIAN`, `FRENCH_R`, `HEBREW`), даты с `PHRASE`,
-  `FAMC.STAT` (спорные связи пунктиром), `PEDI`, `ASSO` с ролями (крёстные,
-  свидетели), источники с `QUAY` и `DATA/TEXT`, `EXID` со ссылками
-  (FamilySearch, Find a Grave, WikiTree), `SNOTE`, HTML-заметки, медиа с
-  `CROP` и `FILE.TRAN`, места с `MAP` и `TRAN`, `NO`, `SDATE`, `RESN`.
-- GEDZIP (`.gdz`) — дерево вместе с фотографиями.
-- Юлианские даты в двух стилях (ст. ст. / н. ст.).
-- Интерфейс на русском и английском, светлая и тёмная темы, работа с
-  клавиатуры и экранным диктором.
+- GEDCOM 7.0: calendars (`JULIAN`, `FRENCH_R`, `HEBREW`), dates with
+  `PHRASE`, `FAMC.STAT` (disputed links drawn dashed), `PEDI`, `ASSO` with
+  roles (godparents, witnesses), sources with `QUAY` and `DATA/TEXT`, `EXID`
+  links (FamilySearch, Find a Grave, WikiTree), `SNOTE`, HTML notes, media
+  with `CROP` and `FILE.TRAN`, places with `MAP` and `TRAN`, `NO`, `SDATE`,
+  `RESN`.
+- GEDZIP (`.gdz`): a tree bundled with its photos.
+- Julian dates shown in both styles (Old Style / New Style).
+- Russian and English UI, light and dark themes, full keyboard and screen
+  reader support.
 
-## Сборка
+## Build
 
-Нужен Node.js 22 или новее.
+Requires Node.js 22 or newer.
 
 ```bash
 npm install
 npm run dev          # http://localhost:5173
-npm run build        # статические файлы в dist/
+npm run build        # static files in dist/
 ```
 
-Проверки (то же, что в CI):
+All checks (same as CI):
 
 ```bash
-npx playwright install chromium   # один раз
+npx playwright install chromium   # once
 npm run check:all
 ```
 
-`npm run fixtures` скачивает официальные тестовые файлы FamilySearch в
-`tests/fixtures/gedcom70/` (они не хранятся в репозитории).
+`npm run fixtures` downloads the official FamilySearch test files into
+`tests/fixtures/gedcom70/` (they are not stored in the repository: their
+source repository carries no license). Files are pinned to a commit and
+verified by SHA-256.
 
-## Интерфейс
+Visual snapshots are per platform. To regenerate the Linux ones, run the
+CI workflow manually with `update_snapshots` enabled and commit the
+`linux-snapshots` artifact.
 
-- `/?demo` открывает встроенную выдуманную семью Соколовых (без файла).
-- Язык интерфейса: каждый файл `src/i18n/<код>.json` — отдельный язык
-  (имя и подпись кнопки — в ключах `meta.name`, `meta.short`); чего в нём
-  нет, показывается по-английски. `src/i18n/en.json` и `ru.json` должны
-  иметь одинаковые ключи (проверяет `npm test`).
-- Тема (светлая, тёмная, как в системе), язык и настройки схемы хранятся
-  в `localStorage`; в адресе — только вид схемы и номер человека
-  (`#view=hourglass&id=I1`).
-- Клавиши: `/` — поиск человека, `Esc` — закрыть панель или карточку.
+## UI
 
-## Деплой
+- `/?demo` opens a built-in, fictional Sokolov family (no file needed).
+- UI languages: each `src/i18n/<code>.json` file is a language (its name and
+  button label are the `meta.name` and `meta.short` keys); missing keys fall
+  back to English. `en.json` and `ru.json` must have the same keys (checked
+  by `npm test`).
+- Theme (light, dark, system), language and chart settings are stored in
+  `localStorage`; the URL hash holds only the chart view and the selected
+  person id (`#view=hourglass&id=I1`).
+- Keys: `/` — find a person, `Esc` — close a panel or the card.
 
-`dist/` — статический сайт без серверной части: его можно положить на
-GitHub Pages, любой статический хостинг или открыть локально через
-`npm run preview`.
+## Deploy
 
-## Личные данные
+`dist/` is a static site with no server side: host it on GitHub Pages or any
+static host, or run it locally with `npm run preview`.
 
-Не добавляйте в репозиторий, тесты, снимки экрана и issues настоящие
-деревья с живыми людьми. Для ручной проверки кладите файлы в `private/`
-или называйте `*.private.ged` — они в `.gitignore`.
+## Personal data
 
-## Лицензия
+Never add real trees with living people to the repository, tests,
+screenshots or issues. For manual testing, put files in `private/` or name
+them `*.private.ged` — both are git-ignored.
 
-Apache License 2.0, см. [LICENSE](LICENSE). Сторонние компоненты — в
-[THIRD_PARTY.md](THIRD_PARTY.md). Схемы родства рисует библиотека
-[topola](https://github.com/PeWu/topola) © Przemek Więch (Apache-2.0).
+## Development
+
+Trunk-based: short-lived branches, small pull requests, `main` always green.
+Commits, pull requests, docs and code comments are in English.
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE). Third-party components are listed
+in [THIRD_PARTY.md](THIRD_PARTY.md). Relationship charts are drawn with the
+[topola](https://github.com/PeWu/topola) library © Przemek Więch
+(Apache-2.0).

@@ -27,10 +27,10 @@ const table = [...rows.values()]
   .map(([name, version, license]) => `| ${name} | ${version} | ${license} |`)
   .join('\n');
 
-const head = readFileSync(join(root, 'THIRD_PARTY.md'), 'utf8').split(
-  '| Пакет |',
-)[0];
+// Keep the prose above the table; replace the table.
+const current = readFileSync(join(root, 'THIRD_PARTY.md'), 'utf8');
+const head = current.slice(0, current.search(/^\| Package/m));
 writeFileSync(
   join(root, 'THIRD_PARTY.md'),
-  `${head}| Пакет | Версия | Лицензия |\n|---|---|---|\n${table}\n`,
+  `${head}| Package | Version | License |\n|---|---|---|\n${table}\n`,
 );
