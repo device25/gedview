@@ -406,3 +406,54 @@ export interface FamView {
   restrictions: Restriction[];
   node: GedcomNode;
 }
+
+// ------------------------------------------------- loader and chart API
+
+export type LoadInput =
+  /** One .ged/.gdz/.zip, or a .ged plus loose media files picked together. */
+  | {kind: 'files'; files: File[]}
+  /** Fetched by the browser directly (no proxy); .ged or .gdz. */
+  | {kind: 'url'; url: string};
+
+/** Implemented in src/load (part A). Throws LoadError. */
+export type LoadTree = (
+  input: LoadInput,
+  signal?: AbortSignal,
+) => Promise<LoadedTree>;
+
+export type LoadErrorCode =
+  | 'NOT_GEDCOM' // no HEAD / unreadable
+  | 'NO_GEDCOM_IN_ZIP'
+  | 'NETWORK' // fetch failed, incl. CORS
+  | 'TOO_LARGE'
+  | 'EMPTY'; // no INDI records
+
+export interface LoadError extends Error {
+  code: LoadErrorCode;
+}
+
+export type ChartView = 'hourglass' | 'relatives' | 'fancy';
+
+/** How to show dates before the Gregorian switch (Russia: 1918). */
+export type DateStyle = 'source' | 'both' | 'gregorian';
+
+export interface ChartSettings {
+  sexColors: boolean;
+  showIds: boolean;
+  /** Draw FAMC.STAT CHALLENGED links dashed. */
+  dashChallenged: boolean;
+  /** FAMC.STAT DISPROVEN links: not drawn, or drawn dotted. */
+  disproven: 'hide' | 'dotted';
+  dateStyle: DateStyle;
+  /** Hide details of records/events with RESN CONFIDENTIAL or PRIVACY. */
+  hideRestricted: boolean;
+}
+
+/** Props of the chart component (part C). */
+export interface ChartProps {
+  tree: LoadedTree;
+  view: ChartView;
+  selectedId: string;
+  onSelect: (indiId: string) => void;
+  settings: ChartSettings;
+}
