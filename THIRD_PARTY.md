@@ -8,6 +8,10 @@ dependencies change.
 All licenses are compatible with Apache-2.0. The Onest font
 (`@fontsource/onest`) is licensed under the SIL Open Font License 1.1.
 
+The base map of «Карта» is Natural Earth 1:50m country boundaries (version
+4.1.0, public domain, https://www.naturalearthdata.com), bundled through the
+`world-atlas` package; the map credits it on screen.
+
 | Package                            | Version | License      |
 | ---------------------------------- | ------- | ------------ |
 | @fontsource/onest                  | 5.3.1   | OFL-1.1      |
@@ -26,6 +30,7 @@ All licenses are compatible with Apache-2.0. The Onest font
 | buffer-from                        | 1.1.2   | MIT          |
 | client-only                        | 0.0.1   | MIT          |
 | clsx                               | 2.1.1   | MIT          |
+| commander                          | 2.20.3  | MIT          |
 | concat-stream                      | 2.0.0   | MIT          |
 | csstype                            | 3.2.3   | MIT          |
 | d3-array                           | 3.2.4   | ISC          |
@@ -34,6 +39,7 @@ All licenses are compatible with Apache-2.0. The Onest font
 | d3-drag                            | 3.0.0   | ISC          |
 | d3-ease                            | 3.0.1   | BSD-3-Clause |
 | d3-flextree                        | 2.1.2   | WTFPL        |
+| d3-geo                             | 3.1.1   | ISC          |
 | d3-hierarchy                       | 3.1.2   | ISC          |
 | d3-hierarchy                       | 1.1.9   | BSD-3-Clause |
 | d3-interpolate                     | 3.0.1   | ISC          |
@@ -56,9 +62,11 @@ All licenses are compatible with Apache-2.0. The Onest font
 | safe-buffer                        | 5.2.1   | MIT          |
 | scheduler                          | 0.28.0  | MIT          |
 | string_decoder                     | 1.3.0   | MIT          |
+| topojson-client                    | 3.1.0   | ISC          |
 | topola                             | 3.10.4  | Apache-2.0   |
 | tree-crawl                         | 1.2.2   | MIT          |
 | tslib                              | 2.8.1   | 0BSD         |
 | typedarray                         | 0.0.6   | MIT          |
 | use-sync-external-store            | 1.7.0   | MIT          |
 | util-deprecate                     | 1.0.2   | MIT          |
+| world-atlas                        | 2.0.2   | ISC          |

@@ -1,0 +1,467 @@
+/* «Карта» */
+.map {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 24px 24px 8px;
+}
+
+.map__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+}
+
+.map__bar .tabs {
+  margin-top: 0;
+}
+
+.map__bar .muted {
+  font-size: 13px;
+}
+
+.map__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+}
+
+.map__body {
+  outline: none;
+}
+
+.map__body[data-focus-visible] {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.map__stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--water);
+}
+
+.map__side {
+  flex: 0 0 340px;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map__side h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.map__side h3 {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.map__side p {
+  margin: 0;
+}
+
+.map__side .muted {
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------ drawing */
+
+.gv-map-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  font-family: var(--font);
+}
+
+.gv-map-svg:active {
+  cursor: grabbing;
+}
+
+.gv-map-water {
+  fill: var(--water);
+}
+
+.gv-map-land {
+  fill: var(--land);
+  stroke: var(--water-line);
+  stroke-width: 0;
+}
+
+.gv-map-border {
+  fill: none;
+  stroke: var(--line);
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.gv-map-flow {
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.75;
+  stroke-linecap: butt;
+}
+
+.gv-map-arrow {
+  fill: var(--accent);
+}
+
+.gv-map-marker {
+  outline: none;
+}
+
+.gv-map-marker circle {
+  fill: var(--accent);
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+.gv-map-marker--ring circle {
+  fill: var(--card);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.gv-map-marker text {
+  fill: var(--card);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.gv-map-marker[role='button'] {
+  cursor: pointer;
+}
+
+.gv-map-marker--selected circle {
+  stroke: var(--sel-ring);
+  stroke-width: 3;
+}
+
+.gv-map-marker:focus-visible circle {
+  stroke: var(--accent);
+  stroke-width: 3;
+  outline: none;
+}
+
+.gv-map-marker:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.gv-map-labels text {
+  fill: var(--text-2);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--land);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------- over the drawing */
+
+.map__filters {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.map-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--control);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.map-chip[aria-pressed='true'] {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.map-chip[data-focus-visible] {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.map__zoom {
+  position: absolute;
+  right: 12px;
+  bottom: 32px;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.map__zoom .zoom__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map__credit {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.map__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--text-2);
+}
+
+/* ---------------------------------------------------------- side panel */
+
+.map-seg {
+  display: inline-flex;
+  align-self: flex-start;
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--control);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.map-seg__item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  outline: none;
+}
+
+.map-seg__item + .map-seg__item {
+  border-left: 1px solid var(--control);
+}
+
+.map-seg__item[data-selected] {
+  background: var(--pill);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.map-seg__item[data-focus-visible] {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.map-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-list__row {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-list__row[data-hovered],
+.map-list__row[aria-current='true'] {
+  background: var(--pill);
+}
+
+.map-list__row[data-focus-visible] {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.map-list__row--static {
+  cursor: default;
+}
+
+.map-list__row .muted {
+  font-variant-numeric: tabular-nums;
+}
+
+.map-list__note {
+  display: block;
+  font-size: 12px;
+  color: var(--warn-text);
+}
+
+.map-steps {
+  margin: 0;
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-steps li > span {
+  display: block;
+}
+
+.map-steps li::marker {
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.map-steps__place {
+  font-size: 14px;
+}
+
+.map-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.map-table th,
+.map-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-weight: 400;
+}
+
+.map-table thead th {
+  color: var(--text-2);
+}
+
+.map-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------ no coordinates */
+
+.map--none {
+  overflow: auto;
+}
+
+.map-none {
+  max-width: 640px;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-none h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.map-none h3 {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.map-none p {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .map {
+    padding: 4px 16px 16px;
+    overflow: auto;
+  }
+
+  .map__body {
+    flex-direction: column;
+    flex: none;
+  }
+
+  .map__stage {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    height: 60vh;
+  }
+
+  /* On a phone the filters are one scrolling row above the map. */
+  .map__filters {
+    position: static;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px;
+    background: var(--card);
+  }
+
+  .map-chip {
+    flex: none;
+  }
+
+  .gv-map-svg {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+
+  .map__side {
+    flex: none;
+    overflow: visible;
+  }
+
+  .map-chip,
+  .map-list__row {
+    min-height: 44px;
+  }
+}
