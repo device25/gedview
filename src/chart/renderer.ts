@@ -401,6 +401,9 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
   }
 
   private photoFrame(p: Group, photo: Photo) {
+    // A shown photo opens the media viewer (pointer only: on the keyboard
+    // the card's portrait does it).
+    p.attr('data-photo', '');
     const frame = p
       .append('svg')
       .attr('class', 'gv-photo-frame')
@@ -428,6 +431,9 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     } else {
       image.attr('width', PHOTO).attr('height', PHOTO);
     }
-    image.on('error', () => frame.remove());
+    image.on('error', () => {
+      frame.remove();
+      p.attr('data-photo', null);
+    });
   }
 }

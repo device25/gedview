@@ -6,6 +6,7 @@ import {useAppState, useDispatch, useIsMobile} from '../store';
 import {decadeScale} from '../model/decades';
 import {chartScope} from '../store/reducer';
 import {FileActions} from './FileActions';
+import {mediaEntries, portraitOf} from './media';
 import {Icon} from './icons';
 import {PersonCard} from './PersonCard';
 import {ScopeBar, ScopeSheet} from './ScopeControls';
@@ -93,6 +94,18 @@ export function Workspace() {
               selectedId={selectedId}
               settings={settings}
               onSelect={(id) => dispatch({type: 'select', id})}
+              onOpenPhoto={(id) => {
+                const indi = tree.indis.get(id);
+                const at = indi
+                  ? portraitOf(
+                      mediaEntries(tree, indi, {
+                        hide: settings.hideRestricted,
+                        allowRemote: settings.loadRemoteMedia,
+                      }),
+                    )
+                  : undefined;
+                if (at) dispatch({type: 'openViewer', id, index: at.index});
+              }}
               zoom={zoom}
               onZoomChange={(z) => dispatch({type: 'setZoom', zoom: z})}
               fitRequest={fitRequest}

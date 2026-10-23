@@ -54,6 +54,8 @@ export interface Tip {
 
 export interface EngineCallbacks {
   onSelect: (id: string) => void;
+  /** A click on a person's photo: open it big. */
+  onPhoto?: (id: string) => void;
   onZoom: (zoom: number) => void;
   onTip: (tip: Tip | null) => void;
 }
@@ -746,6 +748,13 @@ export class ChartEngine {
     this.svgEl.addEventListener(
       'click',
       (e) => {
+        const photo = (e.target as Element | null)?.closest?.<SVGGElement>(
+          'g.gv-photo[data-photo]',
+        );
+        if (photo?.dataset.for) {
+          this.callbacks.onSelect(photo.dataset.for);
+          return this.callbacks.onPhoto?.(photo.dataset.for);
+        }
         const p = person(e);
         if (p?.dataset.id) return this.callbacks.onSelect(p.dataset.id);
         const label = pill(e);
