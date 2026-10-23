@@ -93,7 +93,7 @@ test.describe('language and theme', () => {
       page.getByText('sokolovy.gdz · GEDCOM 7.0.18 · 10 people'),
     ).toBeVisible();
     const card = page.getByRole('complementary');
-    await expect(card).toContainText('6 April 1889 O.S.');
+    await expect(card).toContainText('6 (18) April 1889');
     await expect(card.getByText('Godfather')).toBeVisible();
     await expect(
       page.getByRole('button', {name: 'Interface language'}),

@@ -104,7 +104,7 @@ test.describe('media linked from the file', () => {
       route.fulfill({contentType: 'image/png', body: PNG}),
     );
     await openWithRemoteImage(page, 'https://images.example.test/a.jpg');
-    await expect(page.getByText(/^3 дек 1961$/).first()).toBeVisible();
-    await expect(page.getByText(/1961 —\s*$/)).toHaveCount(0);
+    await expect(page.getByText(/^3\sдекабря\s1961$/).first()).toBeVisible();
+    await expect(page.getByText(/1961\s*[—–]\s*$/)).toHaveCount(0);
   });
 });

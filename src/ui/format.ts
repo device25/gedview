@@ -1,4 +1,12 @@
+import {
+  convertCalendarDate,
+  hebrewLeap,
+  isStandardCalendar,
+  monthIndexOf as tagToMonthIndex,
+  monthTags,
+} from '../gedcom/calendar';
 import type {
+  Calendar,
   CalendarDate,
   DateStyle,
   EventDetail,
@@ -12,10 +20,17 @@ import type {IntlShape} from 'react-intl';
 
 export interface DateFormatOptions {
   locale: string;
+  /**
+   * How dates of other calendars are shown. "source": as recorded. "both":
+   * as recorded with the Gregorian date in brackets ("6 (18) апреля 1889").
+   * "gregorian": only the Gregorian date. Dates that cannot be converted
+   * (no day or month, impossible day) are always shown as recorded.
+   */
   style: DateStyle;
-  /** Abbreviated month ("апр") for one-line life spans. */
-  short?: boolean;
 }
+
+/** Non-breaking space: keeps a day with its month, a number with its noun. */
+export const NBSP = ' ';
 
 const MONTH_TAGS = [
   'JAN',
@@ -34,24 +49,24 @@ const MONTH_TAGS = [
 
 const monthCache = new Map<string, string>();
 
-/** Localised month name. "genitive" is the form used after a day number. */
+/** Localised Gregorian month name, never abbreviated. "genitive" is the form
+ *  used after a day number ("6 апреля"). */
 function monthName(
   locale: string,
   index: number,
   form: 'genitive' | 'standalone',
-  short: boolean,
 ): string {
-  const key = `${locale}|${index}|${form}|${short}`;
+  const key = `${locale}|${index}|${form}`;
   let name = monthCache.get(key);
   if (name === undefined) {
     const date = new Date(Date.UTC(2001, index - 1, 15));
     const fmt = new Intl.DateTimeFormat(locale, {
-      month: short ? 'short' : 'long',
+      month: 'long',
       ...(form === 'genitive' ? {day: 'numeric'} : {}),
       timeZone: 'UTC',
     });
     const part = fmt.formatToParts(date).find((p) => p.type === 'month');
-    name = (part?.value ?? MONTH_TAGS[index - 1] ?? '').replace(/\.$/, '');
+    name = part?.value ?? MONTH_TAGS[index - 1] ?? '';
     monthCache.set(key, name);
   }
   return name;
@@ -59,75 +74,121 @@ function monthName(
 
 function monthIndexOf(c: CalendarDate): number | undefined {
   if (c.monthIndex) return c.monthIndex;
-  const i = c.month ? MONTH_TAGS.indexOf(c.month) : -1;
-  return i >= 0 ? i + 1 : undefined;
+  return c.month ? tagToMonthIndex(c.calendar as Calendar, c.month) : undefined;
 }
 
-const isGregorian = (c: CalendarDate) => c.calendar === 'GREGORIAN';
-/** Julian months have the same names as Gregorian ones. */
-const hasCommonMonths = (c: CalendarDate) =>
-  isGregorian(c) || c.calendar === 'JULIAN';
-
-/** Short marker for a non-Gregorian calendar ("ст. ст." for Julian). */
-export function calendarMarker(calendar: string, intl: IntlShape): string {
-  if (calendar === 'GREGORIAN') return '';
-  const id = `date.calendar.${calendar}`;
-  if (id in intl.messages) return intl.formatMessage({id});
-  return calendar.replace(/^_/, '').replace(/_/g, ' ');
+/** Month name of the French Republican and Hebrew calendars from the
+ *  message files; falls back to the tag as written. */
+function calendarMonthName(
+  c: CalendarDate,
+  index: number | undefined,
+  genitive: boolean,
+  intl: IntlShape,
+): string {
+  let tag =
+    c.month ?? (index ? monthTags(c.calendar as Calendar)?.[index - 1] : '');
+  if (!tag) return '';
+  // Adar I and II exist only in a leap year; otherwise it is just "Adar".
+  const plainAdar =
+    c.calendar === 'HEBREW' &&
+    (tag === 'ADR' || tag === 'ADS') &&
+    !hebrewLeap(c.year);
+  if (plainAdar) tag = 'ADAR';
+  const ids = [
+    `${genitive ? 'monthGen' : 'month'}.${c.calendar}.${tag}`,
+    `month.${c.calendar}.${tag}`,
+  ];
+  const id = ids.find((i) => i in intl.messages);
+  return id ? intl.formatMessage({id}) : tag;
 }
 
+/** The date as recorded: "6 апреля 1889", "апрель 1889", "1889", "12 VEND 3". */
 function formatParts(c: CalendarDate, o: DateFormatOptions): string {
   const intl = getIntl(o.locale);
-  const parts: string[] = [];
-  const common = hasCommonMonths(c);
   const mi = monthIndexOf(c);
-  if (c.day) parts.push(String(c.day));
+  let monthText = '';
   if (c.month || mi) {
-    if (common && mi) {
-      parts.push(
-        monthName(o.locale, mi, c.day ? 'genitive' : 'standalone', !!o.short),
-      );
+    if (c.calendar === 'GREGORIAN' || c.calendar === 'JULIAN') {
+      monthText = mi
+        ? monthName(o.locale, mi, c.day ? 'genitive' : 'standalone')
+        : (c.month ?? '');
+    } else if (isStandardCalendar(c.calendar)) {
+      monthText = calendarMonthName(c, mi, !!c.day, intl);
     } else {
-      parts.push(c.month ?? String(mi));
+      monthText = c.month ?? String(mi);
     }
   }
   let year = String(c.year);
   if (c.dualYear) year += `/${c.dualYear}`;
-  if (c.bce) year += ` ${intl.formatMessage({id: 'date.bce'})}`;
-  parts.push(year);
-  return parts.join(' ');
+  if (c.bce) year += `${NBSP}${intl.formatMessage({id: 'date.bce'})}`;
+  const dayMonth = [c.day, monthText].filter(Boolean).join(NBSP);
+  return [dayMonth, year].filter(Boolean).join(' ');
+}
+
+/** Julian dates written as "6 (18) апреля 1889": the day of the new style is
+ *  in brackets when it falls in the same month and year. */
+function formatJulianBoth(
+  c: CalendarDate,
+  g: CalendarDate,
+  o: DateFormatOptions,
+): string {
+  const recorded = formatParts(c, o);
+  const sameMonth =
+    !c.bce &&
+    !g.bce &&
+    g.year === c.year &&
+    g.monthIndex === c.monthIndex &&
+    c.day !== undefined &&
+    g.day !== undefined;
+  if (!sameMonth) return `${recorded} (${formatParts(g, o)})`;
+  const month = monthName(o.locale, c.monthIndex!, 'genitive');
+  return `${c.day}${NBSP}(${g.day})${NBSP}${month} ${c.year}`;
+}
+
+/** The date in the Gregorian calendar when it can be converted exactly. A
+ *  month without a day cannot be: it would hide a shift of up to 13 days. */
+function toGregorian(c: CalendarDate): CalendarDate | undefined {
+  if (c.calendar === 'GREGORIAN' || !isStandardCalendar(c.calendar))
+    return undefined;
+  if (c.dualYear !== undefined || c.epoch !== undefined) return undefined;
+  return convertCalendarDate(c, 'GREGORIAN');
 }
 
 /**
- * Text of one calendar date, without calendar marker.
- * TODO(part E): for JULIAN with style "both"/"gregorian" append / replace
- * with the Gregorian date (needs JDN conversion, not done here).
+ * Text of one calendar date. Gregorian dates are fully localised. Julian
+ * dates follow the Russian tradition: the recorded date, the new style in
+ * brackets ("6 (18) апреля 1889", "20 декабря 1899 (1 января 1900)"). French
+ * Republican and Hebrew dates are shown as recorded with the Gregorian date
+ * in brackets. Partial dates are never converted.
  */
 export function formatCalendarDate(
   c: CalendarDate,
   o: DateFormatOptions,
 ): string {
-  return formatParts(c, o);
+  let text: string;
+  const g = o.style === 'source' ? undefined : toGregorian(c);
+  if (!g) text = formatParts(c, o);
+  else if (o.style === 'gregorian') text = formatParts(g, o);
+  else if (c.calendar === 'JULIAN') text = formatJulianBoth(c, g, o);
+  else text = `${formatParts(c, o)} (${formatParts(g, o)})`;
+  // A calendar we know nothing about keeps its name.
+  if (!isStandardCalendar(c.calendar)) {
+    const name = c.calendar.replace(/^_/, '').replace(/_/g, ' ');
+    return `${text} ${name}`;
+  }
+  return text;
 }
 
-function withMarker(
-  text: string,
-  dates: Array<CalendarDate | undefined>,
-  o: DateFormatOptions,
-): string {
-  const present = dates.filter((d): d is CalendarDate => !!d);
-  const first = present[0];
-  if (!first || isGregorian(first)) return text;
-  const intl = getIntl(o.locale);
-  // One marker for the whole expression when every date shares the calendar.
-  const marker = calendarMarker(first.calendar, intl);
-  return marker ? `${text} ${marker}` : text;
+/** A date formatter for the chart model (`ChartDataOptions.formatDate`). */
+export function chartDateFormatter(
+  locale: string,
+): (date: CalendarDate, style: DateStyle) => string {
+  return (date, style) => formatCalendarDate(date, {locale, style});
 }
 
 /**
- * Human-readable text of a GEDCOM date for the given UI language.
- * Gregorian dates are fully localised. Other calendars are shown as written
- * with a calendar marker.
+ * Human-readable text of a GEDCOM date for the given UI language, with
+ * qualifiers and ranges in words, never abbreviated.
  */
 export function formatDate(
   date: ParsedDate | undefined,
@@ -137,48 +198,33 @@ export function formatDate(
   const intl = getIntl(o.locale);
   const v = date.value;
   const one = (c?: CalendarDate) => (c ? formatCalendarDate(c, o) : '');
-  const mixed = (list: Array<CalendarDate | undefined>) => {
-    const cals = new Set(list.filter(Boolean).map((c) => c?.calendar));
-    return cals.size > 1;
-  };
-  // Dates of mixed calendars carry their own marker.
-  const each = (c?: CalendarDate) => (c ? withMarker(one(c), [c], o) : '');
 
   switch (v.kind) {
     case 'exact': {
-      let text = withMarker(one(v.date), [v.date], o);
-      if (v.qualifier) {
-        text = `${intl.formatMessage({id: `date.qualifier.${v.qualifier}`})} ${text}`;
-      }
-      return text;
+      const text = one(v.date);
+      if (!v.qualifier) return text;
+      const word = intl.formatMessage({id: `date.qualifier.${v.qualifier}`});
+      return `${word}${NBSP}${text}`;
     }
     case 'range': {
       if (v.type === 'BET') {
-        const list = [v.from, v.to];
-        const [a, b] = mixed(list)
-          ? [each(v.from), each(v.to)]
-          : [one(v.from), one(v.to)];
-        const text = intl.formatMessage({id: 'date.between'}, {a, b});
-        return mixed(list) ? text : withMarker(text, list, o);
+        return intl.formatMessage(
+          {id: 'date.between'},
+          {a: one(v.from), b: one(v.to)},
+        );
       }
-      const single = v.from ?? v.to;
-      const text = intl.formatMessage(
+      return intl.formatMessage(
         {id: v.type === 'BEF' ? 'date.before' : 'date.after'},
-        {a: one(single)},
+        {a: one(v.from ?? v.to)},
       );
-      return withMarker(text, [single], o);
     }
     case 'period': {
-      const list = [v.from, v.to];
-      const m = mixed(list);
-      const a = m ? each(v.from) : one(v.from);
-      const b = m ? each(v.to) : one(v.to);
-      let text: string;
+      const a = one(v.from);
+      const b = one(v.to);
       if (v.from && v.to)
-        text = intl.formatMessage({id: 'date.fromTo'}, {a, b});
-      else if (v.from) text = intl.formatMessage({id: 'date.from'}, {a});
-      else text = intl.formatMessage({id: 'date.to'}, {b});
-      return m ? text : withMarker(text, list, o);
+        return intl.formatMessage({id: 'date.fromTo'}, {a, b});
+      if (v.from) return intl.formatMessage({id: 'date.from'}, {a});
+      return intl.formatMessage({id: 'date.to'}, {b});
     }
     case 'empty':
       return date.phrase ?? '';
@@ -195,20 +241,31 @@ function eventOf(indi: IndiView, tags: string[]): EventDetail | undefined {
   return undefined;
 }
 
-/** "6 апр 1889 ст. ст. — 1957"; empty when nothing is known. */
+/**
+ * Two ends of a range with the dash of the language (Russian norm: the long
+ * dash; no spaces between simple numbers, spaces around it when either side
+ * has spaces: "1858—1921", "6 апреля 1889 — 1957").
+ */
+export function joinRange(a: string, b: string, locale: string): string {
+  const dash = getIntl(locale).formatMessage({id: 'date.rangeDash'});
+  return /\s/.test(a) || /\s/.test(b)
+    ? `${a}${NBSP}${dash} ${b}`
+    : `${a}${dash}${b}`;
+}
+
+/** "6 апреля 1889 — 1957", "1858—1921"; empty when nothing is known. */
 export function lifeSpan(indi: IndiView, o: DateFormatOptions): string {
-  const opts = {...o, short: true};
   const born = eventOf(indi, ['BIRT', 'CHR', 'BAPM']);
   const died = eventOf(indi, ['DEAT', 'BURI']);
-  const b = formatDate(born?.date, opts);
-  const d = formatDate(died?.date, opts);
+  const b = formatDate(born?.date, o);
+  const d = formatDate(died?.date, o);
   const deathKnown = indi.events.some(
     (e) => e.tag === 'DEAT' || e.tag === 'BURI',
   );
-  if (b && d) return `${b} — ${d}`;
+  if (b && d) return joinRange(b, d, o.locale);
   // Death recorded without a date: say it is unknown rather than end on a dash.
-  if (b) return deathKnown ? `${b} — ?` : b;
-  if (d) return `? — ${d}`;
+  if (b) return deathKnown ? joinRange(b, '?', o.locale) : b;
+  if (d) return joinRange('?', d, o.locale);
   return '';
 }
 

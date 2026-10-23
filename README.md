@@ -20,7 +20,8 @@ settings, hosts of images your file links to (requested without a referrer).
   with `CROP` and `FILE.TRAN`, places with `MAP` and `TRAN`, `NO`, `SDATE`,
   `RESN`.
 - GEDZIP (`.gdz`): a tree bundled with its photos.
-- Julian dates shown in both styles (Old Style / New Style).
+- Julian dates in the traditional Russian notation, "6 (18) April 1889": the
+  recorded date, the new style in brackets (or either style alone).
 - Russian and English UI, light and dark themes, full keyboard and screen
   reader support.
 

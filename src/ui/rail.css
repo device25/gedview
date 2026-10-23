@@ -2,29 +2,47 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  align-items: stretch;
   width: 72px;
   height: 100dvh;
-  padding: 16px 0;
+  padding: 16px 0 13px;
+}
+
+/* Spacing is made of the buttons' own padding (3px above and below the
+   44px pill), so there is no dead strip between two buttons. */
+.rail > .logo {
+  align-self: center;
+  margin-bottom: 17px;
 }
 
 .rail__spacer {
   flex: 1;
 }
 
+/* The button spans the whole rail width: the rail touches the screen edge,
+   so a pointer pushed to the left still lands on it (Fitts's law). */
 .rail__btn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+/* The visible 44px pill. */
+.rail__pill {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  padding: 0;
-  border: 0;
   border-radius: 12px;
-  background: transparent;
-  color: var(--text-2);
-  cursor: pointer;
 }
 
 .rail__btn--text {
@@ -33,14 +51,21 @@
 }
 
 .rail__btn[data-hovered]:not([aria-disabled='true']) {
-  background: color-mix(in srgb, var(--pill), transparent 40%);
   color: var(--text);
+}
+
+.rail__btn[data-hovered]:not([aria-disabled='true']) .rail__pill {
+  background: color-mix(in srgb, var(--pill), transparent 40%);
 }
 
 .rail__btn[data-open],
 .rail__btn[aria-expanded='true'] {
-  background: var(--pill);
   color: var(--text);
+}
+
+.rail__btn[data-open] .rail__pill,
+.rail__btn[aria-expanded='true'] .rail__pill {
+  background: var(--pill);
 }
 
 .rail__btn[data-disabled],

@@ -222,7 +222,7 @@ function jdnToFrench(jdn: number): Ymd | undefined {
 
 const HEBREW_EPOCH_JDN = 347996;
 
-const hebrewLeap = (year: number) => mod(year * 7 + 1, 19) < 7;
+export const hebrewLeap = (year: number) => mod(year * 7 + 1, 19) < 7;
 const hebrewYearMonths = (year: number) => (hebrewLeap(year) ? 13 : 12);
 
 function hebrewDelay1(year: number): number {

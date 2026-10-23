@@ -14,6 +14,10 @@ import {
 } from './panels';
 import './rail.css';
 
+/** A rail button is 14px wider than its pill on each side, so a tooltip
+ *  sits 14px closer to keep its usual 10px distance from the pill. */
+const RAIL_TIP_OFFSET = -4;
+
 /** Left icon rail on desktop. */
 export function Rail() {
   const {flyout, tree, lang} = useAppState();
@@ -41,6 +45,7 @@ export function Rail() {
       label={label}
       hint={disabled ? needsTree : undefined}
       shortcut={disabled ? undefined : shortcut}
+      offset={RAIL_TIP_OFFSET}
     >
       <Button
         className="rail__btn"
@@ -49,7 +54,9 @@ export function Rail() {
         data-open={pressed || undefined}
         data-id={id}
       >
-        <Icon name={icon} />
+        <span className="rail__pill">
+          <Icon name={icon} />
+        </span>
       </Button>
     </Tip>
   );
@@ -57,7 +64,11 @@ export function Rail() {
   return (
     <nav className="rail" aria-label={t('nav.label')}>
       <Logo />
-      <Tip label={t('nav.chart')} hint={noTree ? needsTree : undefined}>
+      <Tip
+        label={t('nav.chart')}
+        hint={noTree ? needsTree : undefined}
+        offset={RAIL_TIP_OFFSET}
+      >
         <Button
           className="rail__btn"
           aria-label={t('nav.chart')}
@@ -68,7 +79,9 @@ export function Rail() {
             if (!noTree) dispatch({type: 'closeFlyout'});
           }}
         >
-          <Icon name="tree" />
+          <span className="rail__pill">
+            <Icon name="tree" />
+          </span>
         </Button>
       </Tip>
       <Flyout
@@ -126,7 +139,10 @@ export function Rail() {
         width={300}
         placement="right bottom"
         trigger={
-          <Tip label={intl.formatMessage({id: 'nav.language'}, {lang: short})}>
+          <Tip
+            label={intl.formatMessage({id: 'nav.language'}, {lang: short})}
+            offset={RAIL_TIP_OFFSET}
+          >
             <Button
               className="rail__btn rail__btn--text"
               aria-label={intl.formatMessage(
@@ -135,14 +151,17 @@ export function Rail() {
               )}
               data-open={flyout === 'lang' || undefined}
             >
-              {short}
+              <span className="rail__pill">{short}</span>
             </Button>
           </Tip>
         }
       >
         <LanguagePanel onPicked={() => dispatch({type: 'closeFlyout'})} />
       </Flyout>
-      <Tip label={t(resolved === 'dark' ? 'nav.themeLight' : 'nav.themeDark')}>
+      <Tip
+        label={t(resolved === 'dark' ? 'nav.themeLight' : 'nav.themeDark')}
+        offset={RAIL_TIP_OFFSET}
+      >
         <Button
           className="rail__btn"
           aria-label={t(
@@ -155,7 +174,9 @@ export function Rail() {
             })
           }
         >
-          <Icon name={resolved === 'dark' ? 'moon' : 'sun'} />
+          <span className="rail__pill">
+            <Icon name={resolved === 'dark' ? 'moon' : 'sun'} />
+          </span>
         </Button>
       </Tip>
       <Flyout
