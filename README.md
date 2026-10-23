@@ -5,8 +5,9 @@ A browser-based genealogy tree viewer with full support for
 (and reading GEDCOM 5.5.1).
 
 Files are opened and parsed entirely in the browser: Gedview never uploads
-your tree, uses no analytics and makes no third-party requests except to the
-address you asked it to load a file from.
+your tree and uses no analytics. The only other hosts it contacts are the
+address you asked it to load a file from and, unless switched off in the
+settings, hosts of images your file links to (requested without a referrer).
 
 > Work in progress.
 

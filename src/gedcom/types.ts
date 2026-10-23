@@ -510,6 +510,8 @@ export interface ChartSettings {
   dateStyle: DateStyle;
   /** Hide details of records/events with RESN CONFIDENTIAL or PRIVACY. */
   hideRestricted: boolean;
+  /** Load http(s) media referenced by the file (contacts that host). */
+  loadRemoteMedia: boolean;
 }
 
 /** Props of the chart component (part C). */

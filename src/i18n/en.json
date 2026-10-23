@@ -259,5 +259,9 @@
   "nav.needsTree": "Open a file first",
   "nav.themeDark": "Switch to dark theme",
   "nav.themeLight": "Switch to light theme",
-  "card.expand": "Expand card"
+  "card.expand": "Expand card",
+  "settings.loadRemoteMedia": "Load images linked from the file",
+  "media.open": "Open",
+  "media.failed": "failed to load",
+  "media.remoteOff": "linked, loading is off"
 }

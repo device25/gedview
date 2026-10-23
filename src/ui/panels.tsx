@@ -186,6 +186,12 @@ export function SettingsPanel({mobileExtras}: {mobileExtras?: boolean}) {
       >
         {t('settings.hideRestricted')}
       </CheckField>
+      <CheckField
+        isSelected={settings.loadRemoteMedia}
+        onChange={(v) => set({loadRemoteMedia: v})}
+      >
+        {t('settings.loadRemoteMedia')}
+      </CheckField>
       <SelectField
         label={t('settings.disproven')}
         value={settings.disproven}

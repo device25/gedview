@@ -22,6 +22,7 @@ import {Icon} from './icons';
 import {localName, nameForms, pickVariant} from './lang';
 import {langArg, NoteView} from './NoteView';
 import {safeHref} from './html';
+import {isImageFile, mediaUrl} from '../load';
 import {PersonLink} from './PersonLink';
 import {HiddenNote, parentsLabel, statusText} from './relatives';
 import {
@@ -533,15 +534,38 @@ function ChildLine({
   );
 }
 
-const safeSrc = (u?: string) => !!u && /^(blob:|data:image\/)/.test(u);
+/** A readable name for a file without a title: its decoded file name. */
+function fileLabel(path: string): string {
+  const name = path.split(/[?#]/)[0]!.split(/[\\/]/).pop() || path;
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
+}
+
+/** Where the file can be shown from: a bundled blob, or a link in the file. */
+function resolveMedia(
+  tree: LoadedTree,
+  path: string,
+  allowRemote: boolean,
+): {src?: string; remote: boolean} {
+  const url = mediaUrl(tree.media, path);
+  if (!url) return {remote: false};
+  const remote = /^https?:/i.test(url);
+  return remote && !allowRemote ? {remote} : {src: url, remote};
+}
 
 function MediaItem({media, tree}: {media: MediaLink; tree: LoadedTree}) {
   const intl = useIntl();
+  const {settings} = useAppState();
+  const [failed, setFailed] = useState(false);
   const file = media.files[0];
   if (!file) return null;
-  const src = tree.media.get(file.path);
-  const isImage = file.mime?.startsWith('image/');
-  const title = media.title ?? file.title ?? file.path;
+  const {src, remote} = resolveMedia(tree, file.path, settings.loadRemoteMedia);
+  const isImage = isImageFile(file);
+  const title = media.title ?? file.title ?? fileLabel(file.path);
+  const link = remote ? safeHref(file.path) : undefined;
   const meta = [
     file.mime,
     media.crop ? intl.formatMessage({id: 'media.cropped'}) : '',
@@ -557,18 +581,42 @@ function MediaItem({media, tree}: {media: MediaLink; tree: LoadedTree}) {
         )
       : '',
   ].filter(Boolean);
+  const empty = (id: string) => (
+    <div className="media__thumb media__thumb--empty" aria-hidden="true">
+      {intl.formatMessage({id})}
+    </div>
+  );
   return (
     <div className="media">
-      {isImage && safeSrc(src) ? (
-        <img className="media__thumb" src={src} alt="" />
+      {isImage && src && !failed ? (
+        <img
+          className="media__thumb"
+          src={src}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+        />
+      ) : failed ? (
+        empty('media.failed')
+      ) : remote && !src ? (
+        empty('media.remoteOff')
       ) : (
-        <div className="media__thumb media__thumb--empty" aria-hidden="true">
-          {intl.formatMessage({id: 'media.noPreview'})}
-        </div>
+        empty('media.noPreview')
       )}
       <div className="media__text">
-        <span>{title}</span>
+        <span className="media__title">{title}</span>
         <span className="muted">{meta.join(' · ')}</span>
+        {link && (
+          <a
+            className="link"
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {intl.formatMessage({id: 'media.open'})} ↗
+          </a>
+        )}
       </div>
     </div>
   );

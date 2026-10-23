@@ -259,5 +259,9 @@
   "nav.needsTree": "Сначала откройте файл",
   "nav.themeDark": "Включить тёмную тему",
   "nav.themeLight": "Включить светлую тему",
-  "card.expand": "Развернуть карточку"
+  "card.expand": "Развернуть карточку",
+  "settings.loadRemoteMedia": "Загружать изображения по ссылкам из файла",
+  "media.open": "Открыть",
+  "media.failed": "не загрузилось",
+  "media.remoteOff": "по ссылке, загрузка выключена"
 }

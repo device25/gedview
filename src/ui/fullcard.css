@@ -371,3 +371,7 @@ code {
 .link--ul {
   text-decoration: underline;
 }
+
+.media__title {
+  overflow-wrap: anywhere;
+}

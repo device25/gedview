@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   disproven: 'hide',
   dateStyle: 'source',
   hideRestricted: true,
+  loadRemoteMedia: true,
 };
 
 const KEYS = {
@@ -46,6 +47,7 @@ export function sanitizeSettings(raw: unknown): ChartSettings {
     'showIds',
     'dashChallenged',
     'hideRestricted',
+    'loadRemoteMedia',
   ] as const) {
     if (typeof r[k] === 'boolean') s[k] = r[k];
   }
