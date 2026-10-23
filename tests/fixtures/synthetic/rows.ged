@@ -1,0 +1,116 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+1 LANG ru
+0 @I1@ INDI
+1 NAME Пётр Ильич /Орлов/
+1 SEX M
+1 BIRT
+2 DATE 1880
+1 FAMS @F10@
+0 @I2@ INDI
+1 NAME Анна Фёдоровна /Орлова/
+1 SEX F
+1 BIRT
+2 DATE 1884
+1 FAMS @F10@
+0 @I3@ INDI
+1 NAME Михаил Петрович /Орлов/
+1 SEX M
+1 BIRT
+2 DATE 1904
+1 FAMC @F10@
+1 FAMS @F12@
+0 @I4@ INDI
+1 NAME Сергей Петрович /Орлов/
+1 SEX M
+1 BIRT
+2 DATE 1913
+1 FAMC @F10@
+1 FAMS @F1@
+0 @I5@ INDI
+1 NAME Василий Степанович /Гусев/
+1 SEX M
+1 BIRT
+2 DATE 1887
+1 FAMS @F11@
+0 @I6@ INDI
+1 NAME Елена Васильевна /Гусева/
+1 SEX F
+1 BIRT
+2 DATE 1894
+1 FAMS @F11@
+0 @I7@ INDI
+1 NAME Мария Васильевна /Гусева/
+1 SEX F
+1 BIRT
+2 DATE 1919
+1 FAMC @F11@
+1 FAMS @F1@
+0 @I8@ INDI
+1 NAME Анастасия Васильевна /Гусева/
+1 SEX F
+1 BIRT
+2 DATE 1925
+1 FAMC @F11@
+0 @I9@ INDI
+1 NAME Ольга Сергеевна /Орлова/
+1 SEX F
+1 BIRT
+2 DATE 1938
+1 FAMC @F1@
+0 @I10@ INDI
+1 NAME Валентин Сергеевич /Орлов/
+1 SEX M
+1 BIRT
+2 DATE 1941
+1 FAMC @F1@
+1 FAMS @F2@
+0 @I11@ INDI
+1 NAME Павел Сергеевич /Орлов/
+1 SEX M
+1 BIRT
+2 DATE 1945
+1 FAMC @F1@
+0 @I12@ INDI
+1 NAME Вера Ивановна /Белова/
+1 SEX F
+1 BIRT
+2 DATE 1942
+1 FAMS @F2@
+0 @I13@ INDI
+1 NAME Ирина Валентиновна /Орлова/
+1 SEX F
+1 BIRT
+2 DATE 1961
+1 FAMC @F2@
+0 @I14@ INDI
+1 NAME Кирилл Михайлович /Орлов/
+1 SEX M
+1 BIRT
+2 DATE 1930
+1 FAMC @F12@
+0 @F10@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
+1 CHIL @I4@
+0 @F11@ FAM
+1 HUSB @I5@
+1 WIFE @I6@
+1 CHIL @I7@
+1 CHIL @I8@
+0 @F1@ FAM
+1 HUSB @I4@
+1 WIFE @I7@
+1 CHIL @I9@
+1 CHIL @I10@
+1 CHIL @I11@
+0 @F2@ FAM
+1 HUSB @I10@
+1 WIFE @I12@
+1 CHIL @I13@
+0 @F12@ FAM
+1 HUSB @I3@
+1 CHIL @I14@
+0 TRLR

@@ -13,6 +13,7 @@ import {buildChartData} from '../model/chart';
 import {SETTINGS} from '../model/test-utils';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {GedviewRenderer} from './renderer';
+import {drawInRows} from './rows';
 import {getIntl} from '../i18n';
 
 const CHARTS: Record<ChartView, new (o: ChartOptions) => Chart> = {
@@ -51,14 +52,17 @@ export function drawChart(
       selectedId: () => startIndi,
     },
   );
-  const info = new CHARTS[view]({
+  const chart = new CHARTS[view]({
     data,
     renderer,
     svgSelector: '#chart',
     startIndi,
     animate: false,
     horizontal: false,
-  }).render();
+  });
+  // As the app draws it: one row per generation.
+  if (chart instanceof RelativesChart) drawInRows(chart, () => undefined);
+  const info = chart.render();
   const links: Drawn['links'] = [];
   select<SVGSVGElement, unknown>('#chart')
     .selectAll<SVGPathElement, LinkNode>('path.link')
