@@ -11,12 +11,14 @@ import {
   MOVE_TIME_MS,
   RelativesChart,
 } from 'topola';
+import {dateSortKey} from '../gedcom/date';
 import type {ChartSettings, LoadedTree} from '../gedcom/types';
 import {buildChartData} from '../model/chart';
 import {scopePeople, type ChartScope} from '../model/scope';
 import {ZOOM_MAX, ZOOM_MIN} from '../store/reducer';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {isNavKey, navigate, type NavBox, type NavEdge} from './nav';
+import {drawInRows} from './rows';
 import {
   BOX_H,
   FAMILY_GAP,
@@ -98,6 +100,21 @@ function fontReady(): Promise<void> {
 }
 
 let instances = 0;
+
+/** Whether a person was born before the root; undefined = not known. */
+function olderThan(tree: LoadedTree, rootId: string) {
+  const born = (id: string) =>
+    dateSortKey(
+      tree.indis
+        .get(id)
+        ?.events.find((e) => ['BIRT', 'CHR', 'BAPM'].includes(e.tag))?.date,
+    );
+  const root = born(rootId);
+  return (id: string) => {
+    const b = born(id);
+    return b === undefined || root === undefined ? undefined : b < root;
+  };
+}
 
 export class ChartEngine {
   private readonly svg: Selection<SVGSVGElement, unknown, null, undefined>;
@@ -313,6 +330,9 @@ export class ChartEngine {
       animate,
       horizontal: false,
     });
+    // One row per generation: the layout is redone between topola's
+    // layout and its drawing.
+    drawInRows(chart, olderThan(tree, scope.rootId));
     const info = chart.render();
     this.chartSize = {w: info.size[0], h: info.size[1]};
     this.built = {tree, scope: scopeKey, settings, locale: intl.locale};
