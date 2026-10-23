@@ -153,7 +153,7 @@ describe('Julian dates', () => {
     );
   });
 
-  it('writes both full dates when the month or the year differs', () => {
+  it('writes both full dates across a year, and shares the year otherwise', () => {
     // Year rollover.
     expect(formatDate(jul(1899, 12, 20), ruBoth)).toBe(
       nb('20~декабря 1899 (1~января 1900)'),
@@ -163,29 +163,27 @@ describe('Julian dates', () => {
     );
     // Month rollover within a year.
     expect(formatDate(jul(1889, 3, 25), ruBoth)).toBe(
-      nb('25~марта 1889 (6~апреля 1889)'),
+      nb('25~марта (6~апреля) 1889'),
     );
   });
 
   it('uses the 12-day gap in the 19th century and 13 days from March 1900', () => {
     // Julian 17 FEB 1900 = Gregorian 1 MAR 1900 (gap still 12).
     expect(formatDate(jul(1900, 2, 17), ruBoth)).toBe(
-      nb('17~февраля 1900 (1~марта 1900)'),
+      nb('17~февраля (1~марта) 1900'),
     );
     // 29 FEB 1900 exists in the Julian calendar only.
     expect(formatDate(jul(1900, 2, 29), ruBoth)).toBe(
-      nb('29~февраля 1900 (13~марта 1900)'),
+      nb('29~февраля (13~марта) 1900'),
     );
-    expect(formatDate(jul(1900, 3, 1), ruBoth)).toBe(
-      nb('1~марта (14)~1900'.replace('1~марта (14)~1900', '1~(14)~марта 1900')),
-    );
+    expect(formatDate(jul(1900, 3, 1), ruBoth)).toBe(nb('1~(14)~марта 1900'));
     expect(formatDate(jul(1899, 3, 1), ruBoth)).toBe(nb('1~(13)~марта 1899'));
   });
 
   it('converts Julian 1918 dates with the 13-day gap', () => {
     // The Soviet decree: 31 JAN 1918 (O.S.) was followed by 14 FEB 1918.
     expect(formatDate(jul(1918, 1, 31), ruBoth)).toBe(
-      nb('31~января 1918 (13~февраля 1918)'),
+      nb('31~января (13~февраля) 1918'),
     );
     expect(formatDate(jul(1918, 2, 1), ruBoth)).toBe(nb('1~(14)~февраля 1918'));
   });
