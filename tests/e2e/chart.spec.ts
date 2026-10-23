@@ -394,6 +394,66 @@ test.describe('zoom and pan', () => {
     await expect.poll(async () => (await transform(page)).k).toBeLessThan(k);
   });
 
+  test('fast wheel scrolling is never pulled back', async ({page}) => {
+    await openDemo(page);
+    // A real fast scroll: a wheel event every 8 ms for half a second, with
+    // the scale recorded on every animation frame.
+    const scales = await page.evaluate(async () => {
+      const svg = document.querySelector('svg.gv-svg')!;
+      const layer = document.querySelector('.gv-layer')!;
+      const r = svg.getBoundingClientRect();
+      const seen: number[] = [];
+      let running = true;
+      const tick = () => {
+        const m = /scale\(([^)]*)\)/.exec(
+          layer.getAttribute('transform') ?? '',
+        );
+        seen.push(Number(m?.[1] ?? 1));
+        if (running) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      for (let i = 0; i < 60; i++) {
+        svg.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: -40,
+            clientX: r.x + r.width / 3,
+            clientY: r.y + r.height / 2,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+        await new Promise((done) => setTimeout(done, 8));
+      }
+      await new Promise((done) => setTimeout(done, 500));
+      running = false;
+      return seen;
+    });
+    // Zooming in only: no frame may go back to a smaller scale.
+    for (let i = 1; i < scales.length; i++) {
+      expect(scales[i]!, `frame ${i}`).toBeGreaterThanOrEqual(
+        scales[i - 1]! - 1e-6,
+      );
+    }
+    const k = (await transform(page)).k;
+    expect(k).toBeGreaterThan(1.5);
+    // The label catches up once the wheel stops.
+    await expect(percent(page)).toContainText(`${Math.round(k * 100)}%`);
+  });
+
+  test('a zoom button right after the wheel zooms from where the view is', async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const area = (await page.locator('.gv-chart').boundingBox())!;
+    await page.mouse.move(area.x + area.width / 2, area.y + area.height / 2);
+    await page.mouse.wheel(0, -400);
+    await page.getByRole('button', {name: 'Приблизить'}).click();
+    await page.waitForTimeout(600);
+    const k = (await transform(page)).k;
+    expect(k).toBeGreaterThan(1.4);
+    await expect(percent(page)).toContainText(`${Math.round(k * 100)}%`);
+  });
+
   test('dragging pans without selecting', async ({page}) => {
     await openDemo(page);
     const before = await transform(page);
