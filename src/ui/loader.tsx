@@ -52,6 +52,7 @@ export function LoaderProvider({children}: {children: ReactNode}) {
           type: 'loadDone',
           tree,
           wantedId: parseHash(location.hash).id,
+          wantedRoot: parseHash(location.hash).root,
         });
       } catch (e) {
         if (ctrl.signal.aborted) return;

@@ -51,10 +51,13 @@ export function StoreProvider({children}: {children: ReactNode}) {
 
   useEffect(() => saveSettings(state.settings), [state.settings]);
 
-  // The URL hash keeps the view and the selected id, nothing else.
+  // The URL hash keeps the selected id, the root and the scope, nothing else.
   useEffect(() => {
     if (!state.tree) return;
-    const hash = buildHash(state.view, state.selectedId);
+    const hash = buildHash(
+      {...state.scope, rootId: state.rootId},
+      state.selectedId,
+    );
     if (location.hash !== hash) {
       try {
         history.replaceState(
@@ -66,7 +69,7 @@ export function StoreProvider({children}: {children: ReactNode}) {
         // Some sandboxes forbid history changes.
       }
     }
-  }, [state.tree, state.view, state.selectedId]);
+  }, [state.tree, state.scope, state.rootId, state.selectedId]);
 
   useEffect(() => {
     const onHash = () =>

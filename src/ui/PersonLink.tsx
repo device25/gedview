@@ -17,7 +17,7 @@ export function PersonLink({
   'data-disputed'?: boolean;
   'data-disproven'?: boolean;
 }) {
-  const {view} = useAppState();
+  const {scope} = useAppState();
   const dispatch = useDispatch();
   const onClick = (e: MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
@@ -28,7 +28,7 @@ export function PersonLink({
   return (
     <a
       className={className}
-      href={personHref(view, id)}
+      href={personHref(scope, id)}
       onClick={onClick}
       {...rest}
     >

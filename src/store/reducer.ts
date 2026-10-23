@@ -1,11 +1,7 @@
-import type {
-  ChartSettings,
-  ChartView,
-  LoadedTree,
-  LoadErrorCode,
-} from '../gedcom/types';
+import type {ChartSettings, LoadedTree, LoadErrorCode} from '../gedcom/types';
+import {MIN_UP, scopeDrawn, scopePeople, type ChartScope} from '../model/scope';
 import {DEFAULT_SETTINGS, type Persisted, type ThemePref} from './persist';
-import type {HashState} from './hash';
+import {DEFAULT_SCOPE, type HashState, type ScopeShape} from './hash';
 
 export type FlyoutId = 'people' | 'sources' | 'export' | 'settings' | 'lang';
 
@@ -18,7 +14,10 @@ export type LoadPhase =
 export interface AppState {
   tree?: LoadedTree;
   selectedId?: string;
-  view: ChartView;
+  /** The person the chart counts from (the точка отсчёта). */
+  rootId?: string;
+  /** Who the chart shows and how many generations. */
+  scope: ScopeShape;
   settings: ChartSettings;
   theme: ThemePref;
   lang: string;
@@ -37,11 +36,12 @@ export interface AppState {
 
 export type Action =
   | {type: 'loadStart'}
-  | {type: 'loadDone'; tree: LoadedTree; wantedId?: string}
+  | {type: 'loadDone'; tree: LoadedTree; wantedId?: string; wantedRoot?: string}
   | {type: 'loadFailed'; code: LoadErrorCode | 'UNKNOWN'}
   | {type: 'dismissError'}
   | {type: 'select'; id: string}
-  | {type: 'setView'; view: ChartView}
+  | {type: 'setScope'; patch: Partial<ScopeShape>}
+  | {type: 'reroot'; id: string}
   | {type: 'hashChanged'; hash: HashState}
   | {type: 'setSettings'; patch: Partial<ChartSettings>}
   | {type: 'setTheme'; theme: ThemePref}
@@ -67,7 +67,7 @@ export function createInitialState(
   lang: string,
 ): AppState {
   return {
-    view: hash.view ?? 'hourglass',
+    scope: scopeFromHash(hash, DEFAULT_SCOPE),
     settings: persisted.settings ?? DEFAULT_SETTINGS,
     theme: persisted.theme ?? 'system',
     lang,
@@ -80,6 +80,28 @@ export function createInitialState(
     zoom: 1,
     fitRequest: 0,
   };
+}
+
+function scopeFromHash(hash: HashState, base: ScopeShape): ScopeShape {
+  const level = hash.level ?? base.level;
+  return {
+    level,
+    up: Math.max(MIN_UP[level], hash.up ?? base.up),
+    down: hash.down ?? base.down,
+  };
+}
+
+/** The chart scope of a state, when a tree and a root are there. */
+export function chartScope(state: AppState): ChartScope | undefined {
+  return state.rootId ? {rootId: state.rootId, ...state.scope} : undefined;
+}
+
+/** True when the person is drawn with the current root and scope. */
+function onChart(state: AppState, id: string): boolean {
+  const scope = chartScope(state);
+  if (!state.tree || !scope) return false;
+  const people = scopePeople(state.tree, state.settings, scope);
+  return scopeDrawn(state.tree, people).has(id);
 }
 
 /** The person to show first: the wanted one if it exists, else the first. */
@@ -95,11 +117,14 @@ export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'loadStart':
       return {...state, load: {phase: 'loading'}, flyout: null};
-    case 'loadDone':
+    case 'loadDone': {
+      const selectedId = pickInitialId(action.tree, action.wantedId);
+      const root = action.wantedRoot;
       return {
         ...state,
         tree: action.tree,
-        selectedId: pickInitialId(action.tree, action.wantedId),
+        selectedId,
+        rootId: root && action.tree.indis.has(root) ? root : selectedId,
         load: {phase: 'loaded'},
         flyout: null,
         cardOpen: true,
@@ -108,6 +133,7 @@ export function reducer(state: AppState, action: Action): AppState {
         urlDialogOpen: false,
         zoom: 1,
       };
+    }
     case 'loadFailed':
       // The tree that was open (if any) stays open.
       return {...state, load: {phase: 'error', code: action.code}};
@@ -120,18 +146,28 @@ export function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         selectedId: action.id,
+        // Someone the chart does not show becomes the root, so they are seen.
+        rootId: onChart(state, action.id) ? state.rootId : action.id,
         cardOpen: true,
         cardExpanded: true,
         flyout: null,
       };
-    case 'setView':
-      return state.view === action.view ? state : {...state, view: action.view};
+    case 'setScope': {
+      const scope = {...state.scope, ...action.patch};
+      // Choosing a level raises «вверх» to what it needs.
+      if (action.patch.level)
+        scope.up = Math.max(scope.up, MIN_UP[scope.level]);
+      return {...state, scope};
+    }
+    case 'reroot':
+      if (!state.tree?.indis.has(action.id)) return state;
+      return {...state, rootId: action.id, selectedId: action.id};
     case 'hashChanged': {
-      const next = {...state};
-      if (action.hash.view) next.view = action.hash.view;
-      if (action.hash.id && state.tree?.indis.has(action.hash.id)) {
-        next.selectedId = action.hash.id;
-      }
+      const next = {...state, scope: scopeFromHash(action.hash, state.scope)};
+      const has = (id?: string) => !!id && !!state.tree?.indis.has(id);
+      if (has(action.hash.id)) next.selectedId = action.hash.id;
+      if (has(action.hash.root)) next.rootId = action.hash.root;
+      else if (has(action.hash.id)) next.rootId = action.hash.id;
       return next;
     }
     case 'setSettings':

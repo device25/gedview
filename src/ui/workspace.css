@@ -8,6 +8,7 @@
 .header {
   display: flex;
   flex: none;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 16px;
   padding: 18px 24px 0 8px;
@@ -81,6 +82,7 @@
 }
 
 .chart {
+  position: relative;
   flex: 1;
   min-height: 0;
   padding: 0 0 72px;

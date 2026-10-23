@@ -1,23 +1,24 @@
-import {Button, Tab, TabList, TabPanel, Tabs} from 'react-aria-components';
+import {Button} from 'react-aria-components';
 import {useIntl} from 'react-intl';
 import {ChartView} from '../chart/ChartView';
-import type {ChartView as View} from '../gedcom/types';
 import {useAppState, useDispatch, useIsMobile} from '../store';
-import {isView, VIEWS} from '../store/hash';
+import {chartScope} from '../store/reducer';
 import {FileActions} from './FileActions';
 import {Icon} from './icons';
 import {PersonCard} from './PersonCard';
+import {ScopeBar, ScopeSheet} from './ScopeControls';
 import {treeTitle} from './treeInfo';
 import './workspace.css';
 
 /** Header, chart, legend, zoom and the person card of a loaded tree. */
 export function Workspace() {
-  const {tree, view, selectedId, settings, zoom, fitRequest, cardOpen} =
-    useAppState();
+  const state = useAppState();
+  const {tree, selectedId, settings, zoom, fitRequest, cardOpen} = state;
   const dispatch = useDispatch();
   const intl = useIntl();
   const isMobile = useIsMobile();
-  if (!tree || !selectedId) return null;
+  const scope = chartScope(state);
+  if (!tree || !selectedId || !scope) return null;
   const t = (id: string) => intl.formatMessage({id});
 
   const count = tree.indis.size;
@@ -28,23 +29,11 @@ export function Workspace() {
   );
 
   return (
-    <Tabs
-      className="workspace"
-      selectedKey={view}
-      onSelectionChange={(k) => {
-        if (isView(k)) dispatch({type: 'setView', view: k});
-      }}
-    >
+    <div className="workspace">
       <header className="header">
         <div className="header__main">
           <h1 className="header__title">{treeTitle(tree)}</h1>
-          <TabList className="tabs" aria-label={t('header.views')}>
-            {VIEWS.map((v) => (
-              <Tab key={v} id={v} className="tabs__tab">
-                {t(`view.${v}`)}
-              </Tab>
-            ))}
-          </TabList>
+          {isMobile && <ScopeSheet />}
         </div>
         {isMobile ? (
           <Button
@@ -60,18 +49,13 @@ export function Workspace() {
             <FileActions />
           </>
         )}
+        {!isMobile && <ScopeBar />}
       </header>
 
-      {/* The key gives each view its own panel (and so its own DOM id, which
-          the tab points to with aria-controls) and a fresh chart. */}
-      <TabPanel
-        key={view}
-        id={view}
-        className={cardOpen ? 'chart chart--card' : 'chart'}
-      >
+      <div className={cardOpen ? 'chart chart--card' : 'chart'}>
         <ChartView
           tree={tree}
-          view={view as View}
+          scope={scope}
           selectedId={selectedId}
           settings={settings}
           onSelect={(id) => dispatch({type: 'select', id})}
@@ -79,7 +63,9 @@ export function Workspace() {
           onZoomChange={(z) => dispatch({type: 'setZoom', zoom: z})}
           fitRequest={fitRequest}
         />
-      </TabPanel>
+        {/* The card floats over the chart, under the header. */}
+        <PersonCard />
+      </div>
 
       <div className="legend">
         <span className="legend__item">
@@ -133,8 +119,6 @@ export function Workspace() {
           +
         </Button>
       </div>
-
-      <PersonCard />
-    </Tabs>
+    </div>
   );
 }

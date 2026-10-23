@@ -36,6 +36,10 @@ import {isImageFile, mediaUrl} from './mediaUrl';
 import {splitName} from './names';
 
 export interface ChartDataOptions {
+  /** Only these people (blood relatives) and their spouses are drawn; a
+   *  family stays when one of its partners is kept, so a spouse's other
+   *  marriages and parents are left out. Everyone when absent. */
+  keep?: ReadonlySet<string>;
   /** Text for a date topola cannot take as numbers (non-Gregorian calendar,
    *  BCE, dual year, or a style that shows both calendars). The default is
    *  English, e.g. "6 Apr 1889 (Julian)". */
@@ -254,6 +258,27 @@ function chooseFamc(indi: IndiView, children: Map<string, string[]>) {
   )?.famId;
 }
 
+/** Parent-child links as the chart draws them: each family's children
+ *  (DISPROVEN links per the settings, cycles cut) and each person's one
+ *  parents' family. */
+export interface ParentGraph {
+  children: Map<string, string[]>;
+  famc: Map<string, string>;
+}
+
+export function parentGraph(
+  tree: LoadedTree,
+  settings: ChartSettings,
+): ParentGraph {
+  const children = familyChildren(tree, settings);
+  const famc = new Map<string, string>();
+  for (const indi of tree.indis.values()) {
+    const famId = chooseFamc(indi, children);
+    if (famId !== undefined) famc.set(indi.id, famId);
+  }
+  return {children, famc};
+}
+
 /** Builds topola's JsonGedcomData from a loaded tree. */
 export function buildChartData(
   tree: LoadedTree,
@@ -262,7 +287,19 @@ export function buildChartData(
 ): JsonGedcomData {
   const format = options.formatDate ?? defaultFormat;
   const style = settings.dateStyle;
-  const children = familyChildren(tree, settings);
+  const {children, famc} = parentGraph(tree, settings);
+  const keep = options.keep;
+  const keptFams = new Set<string>();
+  const drawn = new Set<string>();
+  for (const fam of tree.fams.values()) {
+    if (keep && !fam.partners.some((p) => p.indiId && keep.has(p.indiId)))
+      continue;
+    keptFams.add(fam.id);
+    for (const p of fam.partners) if (p.indiId) drawn.add(p.indiId);
+  }
+  const kept = (id: string | undefined): id is string =>
+    id !== undefined && (!keep || keep.has(id) || drawn.has(id));
+  const keptFam = (famId: string) => keptFams.has(famId);
 
   const event = (events: EventDetail[], tag: string) =>
     jsonEvent(
@@ -274,15 +311,16 @@ export function buildChartData(
 
   const indis: JsonIndi[] = [];
   for (const indi of tree.indis.values()) {
+    if (!kept(indi.id)) continue;
     const json: JsonIndi = {
       id: indi.id,
-      fams: indi.fams.filter((id) => tree.fams.has(id)),
+      fams: indi.fams.filter((id) => tree.fams.has(id) && keptFam(id)),
       hideId: !settings.showIds,
       hideSex: !settings.sexColors,
       ...chartNames(indi),
     };
-    const famId = chooseFamc(indi, children);
-    if (famId !== undefined) json.famc = famId;
+    const famId = famc.get(indi.id);
+    if (famId !== undefined && keptFam(famId)) json.famc = famId;
     if (indi.sex === 'M' || indi.sex === 'F') json.sex = indi.sex;
     if (!(settings.hideRestricted && isRestricted(indi.restrictions))) {
       const birth = event(indi.events, 'BIRT');
@@ -297,11 +335,15 @@ export function buildChartData(
 
   const fams: JsonFam[] = [];
   for (const fam of tree.fams.values()) {
-    const json: JsonFam = {id: fam.id, children: children.get(fam.id) ?? []};
+    if (!keptFam(fam.id)) continue;
+    const json: JsonFam = {
+      id: fam.id,
+      children: (children.get(fam.id) ?? []).filter(kept),
+    };
     const husb = fam.partners.find((p) => p.role === 'HUSB')?.indiId;
     const wife = fam.partners.find((p) => p.role === 'WIFE')?.indiId;
-    if (husb) json.husb = husb;
-    if (wife) json.wife = wife;
+    if (kept(husb)) json.husb = husb;
+    if (kept(wife)) json.wife = wife;
     if (!(settings.hideRestricted && isRestricted(fam.restrictions))) {
       const marriage = event(fam.events, 'MARR');
       if (marriage) json.marriage = marriage;

@@ -1,4 +1,5 @@
-// The relationship chart: topola draws hourglass, relatives and fan charts,
+// The relationship chart: topola's relatives layout, fed with the people of
+// the scope,
 // d3-zoom pans and zooms them. The imperative part lives in ChartEngine.
 import {useEffect, useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
@@ -9,7 +10,7 @@ import './chart.css';
 
 export function ChartView({
   tree,
-  view,
+  scope,
   selectedId,
   onSelect,
   settings,
@@ -46,13 +47,13 @@ export function ChartView({
   useEffect(() => {
     engineRef.current?.update({
       tree,
-      view,
+      scope,
       settings,
       intl: latest.current.intl,
       selectedId,
       zoom: latest.current.zoom,
     });
-  }, [tree, view, settings, intl.locale, selectedId]);
+  }, [tree, scope, settings, intl.locale, selectedId]);
 
   // A fit request wins over the zoom value that comes with it.
   const seenFit = useRef(fitRequest);
@@ -74,7 +75,7 @@ export function ChartView({
         role="group"
         aria-label={intl.formatMessage(
           {id: 'chart.graph'},
-          {view: intl.formatMessage({id: `view.${view}`})},
+          {view: intl.formatMessage({id: `level.${scope.level}`})},
         )}
       />
       {tip && (

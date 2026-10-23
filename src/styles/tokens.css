@@ -9,6 +9,8 @@
   --text-2: #66645f;
   --accent: #2f5fc4;
   --line: #a3a09a;
+  /* Outlines of controls: at least 3:1 against the page and cards. */
+  --control: #7f7c75;
   --warn-line: #b06f00;
   --warn-text: #7a4a00;
   --warn-bg: #fff0d2;
@@ -34,6 +36,7 @@
     --text-2: #aba9a4;
     --accent: #8fb0f0;
     --line: #6e7178;
+    --control: #7d7f84;
     --warn-line: #e9a23b;
     --warn-text: #f2c27a;
     --warn-bg: #3a2a10;
@@ -55,6 +58,7 @@
   --text-2: #aba9a4;
   --accent: #8fb0f0;
   --line: #6e7178;
+  --control: #7d7f84;
   --warn-line: #e9a23b;
   --warn-text: #f2c27a;
   --warn-bg: #3a2a10;

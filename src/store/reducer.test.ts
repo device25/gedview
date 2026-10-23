@@ -1,10 +1,12 @@
 import {describe, expect, it} from 'vitest';
 import {mockTree} from '../ui/mock/mockTree';
-import {parseHash, buildHash} from './hash';
+import {buildHash, DEFAULT_SCOPE, parseHash} from './hash';
+import {scopeDrawn, scopePeople} from '../model/scope';
 import {DEFAULT_SETTINGS, sanitizeSettings, loadPersisted} from './persist';
 import {
   createInitialState,
   pickInitialId,
+  chartScope,
   reducer,
   ZOOM_MAX,
   ZOOM_MIN,
@@ -14,24 +16,27 @@ import {
 const initial = () => createInitialState({}, {}, 'en');
 const loaded = (): AppState =>
   reducer(initial(), {type: 'loadDone', tree: mockTree});
+const chartPeople = (s: AppState) =>
+  scopePeople(s.tree!, s.settings, chartScope(s)!);
 
 describe('initial state', () => {
   it('starts empty with defaults', () => {
     const s = initial();
     expect(s.tree).toBeUndefined();
-    expect(s.view).toBe('hourglass');
+    expect(s.scope).toEqual(DEFAULT_SCOPE);
     expect(s.theme).toBe('system');
     expect(s.settings).toEqual(DEFAULT_SETTINGS);
     expect(s.load).toEqual({phase: 'idle'});
   });
 
-  it('takes the view from the hash and settings from storage', () => {
+  it('takes the scope from the hash and settings from storage', () => {
     const s = createInitialState(
       {theme: 'dark', settings: {...DEFAULT_SETTINGS, showIds: true}},
-      {view: 'relatives'},
+      {level: 'cousins2', up: 1, down: 0},
       'ru',
     );
-    expect(s.view).toBe('relatives');
+    // «Троюродные» need three generations up.
+    expect(s.scope).toEqual({level: 'cousins2', up: 3, down: 0});
     expect(s.theme).toBe('dark');
     expect(s.settings.showIds).toBe(true);
     expect(s.lang).toBe('ru');
@@ -79,27 +84,80 @@ describe('selection and hash', () => {
     expect(reducer(s, {type: 'select', id: 'X99'})).toBe(s);
   });
 
-  it('applies view and id from a hash change, ignoring unknown ids', () => {
+  it('applies the scope, root and id from a hash change', () => {
     const s = reducer(loaded(), {
       type: 'hashChanged',
-      hash: {view: 'relatives', id: 'I6'},
+      hash: {level: 'all', id: 'I6', root: 'I2'},
     });
-    expect(s.view).toBe('relatives');
+    expect(s.scope.level).toBe('all');
     expect(s.selectedId).toBe('I6');
+    expect(s.rootId).toBe('I2');
     const t = reducer(s, {type: 'hashChanged', hash: {id: 'X99'}});
     expect(t.selectedId).toBe('I6');
+    expect(t.rootId).toBe('I2');
   });
 
   it('round-trips the hash and ignores junk', () => {
-    expect(buildHash('relatives', 'I12')).toBe('#view=relatives&id=I12');
-    expect(parseHash('#view=relatives&id=I12')).toEqual({
-      view: 'relatives',
+    const scope = {level: 'siblings', up: 3, down: 2, rootId: 'I1'} as const;
+    expect(buildHash(scope, 'I12')).toBe(
+      '#id=I12&root=I1&level=siblings&up=3&down=2',
+    );
+    expect(parseHash('#id=I12&root=I1&level=siblings&up=3&down=2')).toEqual({
       id: 'I12',
+      root: 'I1',
+      level: 'siblings',
+      up: 3,
+      down: 2,
     });
-    // The fan view was removed: old links fall back to the default view.
+    // The root is left out when it is the selected person.
+    expect(buildHash({...scope, rootId: 'I12'}, 'I12')).toBe(
+      '#id=I12&level=siblings&up=3&down=2',
+    );
+    // Old links named a view.
+    expect(parseHash('#view=relatives&id=I12')).toEqual({
+      id: 'I12',
+      level: 'all',
+    });
+    expect(parseHash('#view=hourglass')).toEqual({level: 'direct'});
     expect(parseHash('#view=fancy&id=I12')).toEqual({id: 'I12'});
-    expect(parseHash('#view=bogus')).toEqual({});
+    expect(parseHash('#level=bogus&up=x&down=99')).toEqual({down: 12});
     expect(parseHash('')).toEqual({});
+  });
+});
+
+describe('chart scope', () => {
+  it('counts from the first person after loading', () => {
+    expect(loaded().rootId).toBe('I1');
+  });
+
+  it('a level raises «вверх» to what it needs', () => {
+    let s = reducer(loaded(), {type: 'setScope', patch: {up: 1}});
+    s = reducer(s, {type: 'setScope', patch: {level: 'cousins1'}});
+    expect(s.scope).toMatchObject({level: 'cousins1', up: 2});
+  });
+
+  it('re-roots on request, and when the selected person is off the chart', () => {
+    let s = reducer(loaded(), {type: 'reroot', id: 'I4'});
+    expect(s.rootId).toBe('I4');
+    expect(s.selectedId).toBe('I4');
+    s = reducer(loaded(), {
+      type: 'setScope',
+      patch: {level: 'direct', up: 1, down: 0},
+    });
+    const far = [...mockTree.indis.keys()].find(
+      (id) => !scopeDrawn(mockTree, chartPeople(s)).has(id),
+    );
+    if (far) {
+      const t = reducer(s, {type: 'select', id: far});
+      expect(t.rootId).toBe(far);
+    }
+    // A spouse is on the chart too: selecting keeps the root.
+    const near = [...scopeDrawn(mockTree, chartPeople(s))].find(
+      (id) => !chartPeople(s).has(id),
+    );
+    if (near) {
+      expect(reducer(s, {type: 'select', id: near}).rootId).toBe(s.rootId);
+    }
   });
 });
 
