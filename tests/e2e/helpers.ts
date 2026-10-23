@@ -65,3 +65,7 @@ export async function moveMouseTo(page: Page, target: Locator) {
     steps: 6,
   });
 }
+
+/** The chart: an SVG group holding one button per person. */
+export const chart = (page: Page) =>
+  page.getByRole('group', {name: /Стрелки — переход между родственниками/});

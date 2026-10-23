@@ -1,10 +1,8 @@
 import {expect, test} from '@playwright/test';
-import {openDemo, trackExternal} from './helpers';
+import {chart, openDemo, trackExternal} from './helpers';
 
 test.describe('demo tree', () => {
-  test('shows the chart placeholder, the header and the card', async ({
-    page,
-  }) => {
+  test('shows the chart, the header and the card', async ({page}) => {
     const external = trackExternal(page);
     await openDemo(page);
     await expect(
@@ -18,11 +16,11 @@ test.describe('demo tree', () => {
       page.getByRole('tab', {name: 'Песочные часы'}),
     ).toHaveAttribute('aria-selected', 'true');
 
-    const chart = page.getByRole('list', {name: 'Люди на схеме'});
-    await expect(chart.getByRole('button')).toHaveCount(10);
+    // Ivan, his parents, his wife with her parents and their two children.
+    await expect(chart(page).getByRole('button')).toHaveCount(8);
     await expect(
-      chart.getByRole('button', {
-        name: /^Иван Петрович Соколов\s*6 апр 1889 ст\. ст\. — 1957/,
+      chart(page).getByRole('button', {
+        name: /^Иван Петрович Соколов, 6 апр 1889 ст\. ст\. — 1957/,
       }),
     ).toHaveAttribute('aria-current', 'true');
 
@@ -44,8 +42,7 @@ test.describe('demo tree', () => {
     page,
   }) => {
     await openDemo(page);
-    await page
-      .getByRole('list', {name: 'Люди на схеме'})
+    await chart(page)
       .getByRole('button', {name: /^Пётр Ильич Соколов/})
       .click();
     await expect(
@@ -114,11 +111,7 @@ test.describe('demo tree', () => {
     await show.click();
     await expect(card).toBeVisible();
     // Esc with focus on the chart closes the card too.
-    await page
-      .getByRole('list', {name: 'Люди на схеме'})
-      .getByRole('button')
-      .nth(1)
-      .focus();
+    await chart(page).getByRole('button').nth(1).focus();
     await page.keyboard.press('Escape');
     await expect(card).toBeHidden();
     await expect(
@@ -188,17 +181,9 @@ test.describe('demo tree', () => {
     await expect(
       dialog.getByRole('checkbox', {name: 'Идентификаторы'}),
     ).toBeChecked();
-    await expect(
-      page
-        .getByRole('list', {name: 'Люди на схеме'})
-        .getByText('I2', {exact: true}),
-    ).toBeVisible();
+    await expect(chart(page).getByText('I2', {exact: true})).toBeVisible();
     await page.keyboard.press('Escape');
     await page.reload();
-    await expect(
-      page
-        .getByRole('list', {name: 'Люди на схеме'})
-        .getByText('I2', {exact: true}),
-    ).toBeVisible();
+    await expect(chart(page).getByText('I2', {exact: true})).toBeVisible();
   });
 });

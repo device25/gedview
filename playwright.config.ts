@@ -1,5 +1,8 @@
 import {defineConfig, devices} from '@playwright/test';
 
+// PW_PORT lets several checkouts run the suite at the same time.
+const port = Number(process.env.PW_PORT ?? 4173);
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -7,7 +10,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', {open: 'never'}]],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${port}`,
     locale: 'ru-RU',
     trace: 'on-first-retry',
   },
@@ -27,8 +30,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx vite preview --port 4173 --strictPort',
-    port: 4173,
+    command: `npx vite preview --port ${port} --strictPort`,
+    port,
     reuseExistingServer: !process.env.CI,
   },
 });
