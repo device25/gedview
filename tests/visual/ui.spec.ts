@@ -6,6 +6,9 @@ async function ready(page: import('@playwright/test').Page, path = '/?demo') {
     page.getByRole('heading', {level: 2, name: 'Иван Петрович Соколов'}),
   ).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
+  // The chart is drawn (boxes, and the label on the disputed link).
+  await expect(page.locator('g.gv-person').first()).toBeVisible();
+  await expect(page.locator('.gv-pill')).toHaveCount(1);
 }
 
 test('demo screen, light', async ({page}) => {
