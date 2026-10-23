@@ -40,7 +40,14 @@ export type ParseWarningCode =
   | 'UNDEFINED_XREF' // pointer to a record that does not exist
   | 'UNDOCUMENTED_EXTENSION' // _TAG without HEAD.SCHMA entry (allowed, informative)
   | 'BAD_DATE'
-  | 'BAD_AGE';
+  | 'BAD_AGE'
+  // Added after the first contract (additive):
+  | 'TAB_DELIMITER' // tab used where a space delimiter belongs; tolerated
+  | 'LEADING_WHITESPACE' // whitespace before the level; tolerated
+  | 'DUPLICATE_XREF' // two records with the same id; the first one wins
+  | 'NO_XREF' // INDI/FAM record without an id; it cannot be shown
+  | 'ENCODING' // bytes were not UTF-8; decoded as windows-1252
+  | 'TOO_MANY_WARNINGS'; // the list was cut; the message says how many
 
 export interface ParseWarning {
   code: ParseWarningCode;
@@ -87,6 +94,8 @@ export interface CalendarDate {
   bce: boolean;
   /** 5.5.1 dual year "1699/00" — the part after the slash, verbatim. */
   dualYear?: string;
+  /** Extension epoch tag ("_EPOCH"); `bce` covers the standard BCE. */
+  epoch?: string;
 }
 
 export type DateQualifier = 'ABT' | 'CAL' | 'EST';
@@ -168,6 +177,9 @@ export interface PersonName {
     pieces: NamePieces;
   }>;
   node: GedcomNode;
+  /** NAME.SOUR and NAME.NOTE (additive; always set by the loader). */
+  citations?: Citation[];
+  notes?: NoteText[];
 }
 
 // ------------------------------------------------------- family links (FAMC)
@@ -183,6 +195,8 @@ export interface ChildFamilyLink {
   status?: ChildLinkStatus; // FAMC.STAT
   statusPhrase?: string; // FAMC.STAT.PHRASE
   node: GedcomNode;
+  /** FAMC.NOTE (additive). */
+  notes?: NoteText[];
 }
 
 // ---------------------------------------------------------- associations
@@ -340,6 +354,19 @@ export interface EventDetail {
   restrictions: Restriction[];
   uids: string[];
   node: GedcomNode;
+  // --- additive fields (rarely needed; the raw `node` has everything) ---
+  /** BIRT/CHR/ADOP FAMC: the family the event relates the child to. */
+  famId?: string;
+  /** ADOP.FAMC.ADOP: who adopted (HUSB, WIFE, BOTH). */
+  adoptedBy?: string;
+  /** ADDR, with line breaks. */
+  address?: string;
+  /** PHON, EMAIL, FAX, WWW in file order. */
+  contacts?: Array<{kind: 'PHON' | 'EMAIL' | 'FAX' | 'WWW'; value: string}>;
+  /** TEMP of a Latter-day Saint ordinance. */
+  temple?: string;
+  /** STAT of a Latter-day Saint ordinance. */
+  status?: string;
 }
 
 /** INDI.NO / FAM.NO: an event that did NOT happen. */
@@ -367,6 +394,8 @@ export interface IndiView {
   restrictions: Restriction[];
   /** Extension structures (tag starting with "_") with SCHMA URI if declared. */
   extensions: Array<{tag: string; uri?: string; node: GedcomNode}>;
+  /** The INDI record itself (additive; always set by the loader). */
+  node?: GedcomNode;
 }
 
 // ------------------------------------------------------- loaded tree
@@ -387,6 +416,8 @@ export interface LoadedTree {
   fams: Map<string, FamView>;
   /** "famId|indiId" -> status, for chart link styling. */
   childLinkStatus: Map<string, {status: ChildLinkStatus; phrase?: string}>;
+  /** SOUR records by id (additive; always set by the loader). */
+  sources?: Map<string, SourceView>;
 }
 
 export interface FamView {
@@ -399,6 +430,37 @@ export interface FamView {
   nonEvents: NonEvent[];
   associations: Association[];
   citations: Citation[];
+  notes: NoteText[];
+  media: MediaLink[];
+  exids: ExternalId[];
+  uids: string[];
+  restrictions: Restriction[];
+  /** Extension structures directly under the FAM (additive). */
+  extensions?: Array<{tag: string; uri?: string; node: GedcomNode}>;
+  node: GedcomNode;
+}
+
+/** A SOUR record, for the sources list and for resolving citations
+ *  (additive; the loader fills LoadedTree.sources). */
+export interface SourceView {
+  id: string;
+  title?: string;
+  author?: string;
+  abbreviation?: string;
+  publication?: string;
+  /** SOUR.TEXT: text from the source. */
+  text?: NoteText;
+  /** SOUR.DATA.AGNC. */
+  agency?: string;
+  /** SOUR.DATA.EVEN: what the source records, when and where. */
+  events: Array<{types: string[]; date?: ParsedDate; place?: Place}>;
+  repositories: Array<{
+    repoId?: string;
+    /** REPO.NAME. */
+    name?: string;
+    callNumbers: Array<{value: string; medium?: string}>;
+    notes: NoteText[];
+  }>;
   notes: NoteText[];
   media: MediaLink[];
   exids: ExternalId[];
