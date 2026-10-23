@@ -1,0 +1,181 @@
+import {describe, expect, it} from 'vitest';
+import type {CalendarDate, ParsedDate} from '../gedcom/types';
+import {getIntl} from '../i18n';
+import {formatAge, formatDate, initials, lifeSpan} from './format';
+import {mockTree} from './mock/mockTree';
+
+const cal = (
+  calendar: string,
+  year: number,
+  month?: number,
+  day?: number,
+  extra: Partial<CalendarDate> = {},
+): CalendarDate => ({
+  calendar,
+  year,
+  month: month ? 'XXX' : undefined,
+  monthIndex: month,
+  day,
+  bce: false,
+  ...extra,
+});
+
+const exact = (
+  date: CalendarDate,
+  qualifier?: 'ABT' | 'CAL' | 'EST',
+): ParsedDate => ({raw: '', value: {kind: 'exact', date, qualifier}});
+
+const ru = {locale: 'ru', style: 'source'} as const;
+const en = {locale: 'en', style: 'source'} as const;
+
+describe('formatDate', () => {
+  it('formats full Gregorian dates in Russian with the genitive month', () => {
+    const d = exact(cal('GREGORIAN', 1889, 4, 6));
+    expect(formatDate(d, ru)).toBe('6 апреля 1889');
+    expect(formatDate(d, {...ru, short: true})).toBe('6 апр 1889');
+  });
+
+  it('formats full Gregorian dates in English', () => {
+    const d = exact(cal('GREGORIAN', 1889, 4, 6));
+    expect(formatDate(d, en)).toBe('6 April 1889');
+    expect(formatDate(d, {...en, short: true})).toBe('6 Apr 1889');
+  });
+
+  it('uses the nominative month without a day, and a bare year', () => {
+    expect(formatDate(exact(cal('GREGORIAN', 1889, 4)), ru)).toBe(
+      'апрель 1889',
+    );
+    expect(formatDate(exact(cal('GREGORIAN', 1957)), ru)).toBe('1957');
+  });
+
+  it('prefixes qualifiers', () => {
+    expect(formatDate(exact(cal('GREGORIAN', 1862), 'ABT'), ru)).toBe(
+      'ок. 1862',
+    );
+    expect(formatDate(exact(cal('GREGORIAN', 1862), 'ABT'), en)).toBe(
+      'abt 1862',
+    );
+    expect(formatDate(exact(cal('GREGORIAN', 1862), 'EST'), en)).toBe(
+      'est 1862',
+    );
+  });
+
+  it('adds the old-style marker to Julian dates', () => {
+    const d = exact(cal('JULIAN', 1889, 4, 6));
+    expect(formatDate(d, ru)).toBe('6 апреля 1889 ст. ст.');
+    expect(formatDate(d, en)).toBe('6 April 1889 O.S.');
+  });
+
+  it('shows Julian dates as written for every date style until part E', () => {
+    const d = exact(cal('JULIAN', 1889, 4, 6));
+    expect(formatDate(d, {...ru, style: 'both'})).toBe('6 апреля 1889 ст. ст.');
+    expect(formatDate(d, {...ru, style: 'gregorian'})).toBe(
+      '6 апреля 1889 ст. ст.',
+    );
+  });
+
+  it('shows other calendars with the month tag as written', () => {
+    const d = exact(cal('FRENCH_R', 3, 1, 12, {month: 'VEND', monthIndex: 1}));
+    expect(formatDate(d, en)).toBe('12 VEND 3 French Rep.');
+  });
+
+  it('keeps an unknown calendar name as a marker', () => {
+    expect(formatDate(exact(cal('_MY_CAL', 5)), en)).toBe('5 MY CAL');
+  });
+
+  it('handles BCE and dual years', () => {
+    expect(
+      formatDate(exact(cal('GREGORIAN', 44, 3, 15, {bce: true})), en),
+    ).toBe('15 March 44 BCE');
+    expect(
+      formatDate(
+        exact(cal('GREGORIAN', 1699, undefined, undefined, {dualYear: '00'})),
+        en,
+      ),
+    ).toBe('1699/00');
+  });
+
+  it('formats ranges and periods', () => {
+    const a = cal('GREGORIAN', 1900);
+    const b = cal('GREGORIAN', 1910);
+    expect(
+      formatDate(
+        {raw: '', value: {kind: 'range', type: 'BET', from: a, to: b}},
+        ru,
+      ),
+    ).toBe('между 1900 и 1910');
+    expect(
+      formatDate({raw: '', value: {kind: 'range', type: 'BEF', from: a}}, en),
+    ).toBe('before 1900');
+    expect(
+      formatDate({raw: '', value: {kind: 'range', type: 'AFT', from: a}}, ru),
+    ).toBe('после 1900');
+    expect(
+      formatDate({raw: '', value: {kind: 'period', from: a, to: b}}, ru),
+    ).toBe('с 1900 по 1910');
+    expect(formatDate({raw: '', value: {kind: 'period', from: a}}, en)).toBe(
+      'from 1900',
+    );
+    expect(formatDate({raw: '', value: {kind: 'period', to: b}}, en)).toBe(
+      'to 1910',
+    );
+  });
+
+  it('puts one marker on a Julian range, one per date when calendars differ', () => {
+    const j1 = cal('JULIAN', 1900);
+    const j2 = cal('JULIAN', 1910);
+    const g = cal('GREGORIAN', 1920);
+    expect(
+      formatDate(
+        {raw: '', value: {kind: 'range', type: 'BET', from: j1, to: j2}},
+        ru,
+      ),
+    ).toBe('между 1900 и 1910 ст. ст.');
+    expect(
+      formatDate(
+        {raw: '', value: {kind: 'range', type: 'BET', from: j1, to: g}},
+        ru,
+      ),
+    ).toBe('между 1900 ст. ст. и 1920');
+  });
+
+  it('shows the phrase for an empty date and the raw text for unparsed ones', () => {
+    expect(
+      formatDate({raw: '', value: {kind: 'empty'}, phrase: 'весной'}, ru),
+    ).toBe('весной');
+    expect(formatDate({raw: 'lately', value: {kind: 'unparsed'}}, ru)).toBe(
+      'lately',
+    );
+    expect(formatDate(undefined, ru)).toBe('');
+  });
+});
+
+describe('lifeSpan', () => {
+  it('joins birth and death, with the Julian marker', () => {
+    const ivan = mockTree.indis.get('I1');
+    expect(ivan && lifeSpan(ivan, ru)).toBe('6 апр 1889 ст. ст. — 1957');
+    expect(ivan && lifeSpan(ivan, en)).toBe('6 Apr 1889 O.S. — 1957');
+  });
+
+  it('handles an approximate birth', () => {
+    const maria = mockTree.indis.get('I3');
+    expect(maria && lifeSpan(maria, ru)).toBe('ок. 1862 — 1930');
+  });
+});
+
+describe('helpers', () => {
+  it('takes initials from the first and last word', () => {
+    expect(initials('Иван Петрович Соколов')).toBe('ИС');
+    expect(initials('Cher')).toBe('C');
+    expect(initials('')).toBe('');
+  });
+
+  it('formats ages with plurals', () => {
+    expect(formatAge({raw: '7y', years: 7}, getIntl('ru'))).toBe('7 лет');
+    expect(formatAge({raw: '22y', years: 22}, getIntl('ru'))).toBe('22 года');
+    expect(formatAge({raw: '1y', years: 1}, getIntl('en'))).toBe('1 year');
+    expect(formatAge({raw: '< 3m', bound: '<', months: 3}, getIntl('en'))).toBe(
+      '< 3 mo',
+    );
+  });
+});
