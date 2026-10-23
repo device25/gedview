@@ -18,7 +18,6 @@
   "header.metaNoVersion": "{file} · {count, plural, one {# person} other {# people}}",
   "view.hourglass": "Hourglass",
   "view.relatives": "All relatives",
-  "view.fancy": "Fan",
   "file.open": "Open file",
   "file.openUrl": "From link",
   "file.title": "File",

@@ -28,10 +28,10 @@ describe('initial state', () => {
   it('takes the view from the hash and settings from storage', () => {
     const s = createInitialState(
       {theme: 'dark', settings: {...DEFAULT_SETTINGS, showIds: true}},
-      {view: 'fancy'},
+      {view: 'relatives'},
       'ru',
     );
-    expect(s.view).toBe('fancy');
+    expect(s.view).toBe('relatives');
     expect(s.theme).toBe('dark');
     expect(s.settings.showIds).toBe(true);
     expect(s.lang).toBe('ru');
@@ -91,8 +91,13 @@ describe('selection and hash', () => {
   });
 
   it('round-trips the hash and ignores junk', () => {
-    expect(buildHash('fancy', 'I12')).toBe('#view=fancy&id=I12');
-    expect(parseHash('#view=fancy&id=I12')).toEqual({view: 'fancy', id: 'I12'});
+    expect(buildHash('relatives', 'I12')).toBe('#view=relatives&id=I12');
+    expect(parseHash('#view=relatives&id=I12')).toEqual({
+      view: 'relatives',
+      id: 'I12',
+    });
+    // The fan view was removed: old links fall back to the default view.
+    expect(parseHash('#view=fancy&id=I12')).toEqual({id: 'I12'});
     expect(parseHash('#view=bogus')).toEqual({});
     expect(parseHash('')).toEqual({});
   });

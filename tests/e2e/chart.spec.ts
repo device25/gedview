@@ -55,14 +55,6 @@ test.describe('chart views', () => {
     await expect(
       chart(page).getByRole('button', {name: /^Николай Иванович/}),
     ).toBeVisible();
-
-    // The fan chart shows the descendants of the selected person.
-    await page.getByRole('tab', {name: 'Веер'}).click();
-    await expect(chart(page).getByRole('button')).toHaveCount(4);
-    await expect(chart(page).locator('path.branch')).toHaveCount(2);
-    await expect(
-      chart(page).getByRole('button', {name: /^Александра Ивановна/}),
-    ).toBeVisible();
   });
 
   test('clicking selects a person, updates the card and centres the box', async ({
@@ -431,8 +423,8 @@ test.describe('zoom and pan', () => {
 
   test('keeps working after a view change and a resize', async ({page}) => {
     await openDemo(page);
-    await page.getByRole('tab', {name: 'Веер'}).click();
-    await expect(chart(page).getByRole('button')).toHaveCount(4);
+    await page.getByRole('tab', {name: 'Все родственники'}).click();
+    await expect(chart(page).getByRole('button')).toHaveCount(8);
     await page.setViewportSize({width: 900, height: 700});
     await page.getByRole('button', {name: 'Приблизить'}).click();
     await expect
@@ -445,7 +437,6 @@ test.describe('accessibility of the chart', () => {
   for (const [tab, name] of [
     ['Песочные часы', 'hourglass'],
     ['Все родственники', 'relatives'],
-    ['Веер', 'fan'],
   ] as const) {
     test(`axe is clean on the ${name} view, light and dark`, async ({page}) => {
       await page.emulateMedia({colorScheme: 'light'});
@@ -484,7 +475,7 @@ test.describe('real and large trees', () => {
       .getByTestId('file-input')
       .setInputFiles('tests/fixtures/gedcom70/maximal70.ged');
     await expect(chart(page).getByRole('button').first()).toBeVisible();
-    for (const tab of ['Все родственники', 'Веер', 'Песочные часы']) {
+    for (const tab of ['Все родственники', 'Песочные часы']) {
       await page.getByRole('tab', {name: tab}).click();
       await expect(chart(page).getByRole('button').first()).toBeVisible();
     }

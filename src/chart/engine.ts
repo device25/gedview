@@ -6,7 +6,6 @@ import 'd3-transition';
 import {zoom, zoomIdentity, zoomTransform, type ZoomBehavior} from 'd3-zoom';
 import type {IntlShape} from 'react-intl';
 import {
-  FancyChart,
   HIDE_TIME_MS,
   HourglassChart,
   JsonDataProvider,
@@ -56,7 +55,6 @@ export interface EngineInput {
 const CHARTS: Record<ChartView, new (options: ChartOptions) => Chart> = {
   hourglass: HourglassChart,
   relatives: RelativesChart,
-  fancy: FancyChart,
 };
 
 const FONT_FAMILY = 'Onest, system-ui, sans-serif';
@@ -292,7 +290,7 @@ export class ChartEngine {
 
     const origin = info.origin;
     this.origin = origin;
-    const links = this.collect(renderer, origin, view);
+    const links = this.collect(renderer, origin);
     this.annotate(links, input);
     this.styleLinks(input);
 
@@ -328,7 +326,6 @@ export class ChartEngine {
   private collect(
     renderer: GedviewRenderer,
     origin: [number, number],
-    view: ChartView,
   ): ChildLink[] {
     const [ox, oy] = origin;
     this.boxes = [];
@@ -355,7 +352,7 @@ export class ChartEngine {
       };
       add('indi', indi, 0);
       add('spouse', spouse, indi?.width ?? 0);
-      const link = childLinkOf(node as unknown as LinkNode, view);
+      const link = childLinkOf(node as unknown as LinkNode);
       if (link) {
         links.push(link);
         this.edges.push({
@@ -414,12 +411,11 @@ export class ChartEngine {
   /** Marks every path with how its link is drawn (CSS does the rest). */
   private styleLinks(input: EngineInput): void {
     const {tree, settings} = input;
-    const view = input.view;
     this.inner
       .select('g')
-      .selectAll<SVGPathElement, LinkNode>('path.link, path.branch')
+      .selectAll<SVGPathElement, LinkNode>('path.link')
       .each(function (d) {
-        const link = childLinkOf(d, view);
+        const link = childLinkOf(d);
         const look = link
           ? linkInfo(tree, settings, link.famId, link.childId).look
           : 'solid';

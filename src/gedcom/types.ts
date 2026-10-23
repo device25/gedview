@@ -495,7 +495,7 @@ export interface LoadError extends Error {
   code: LoadErrorCode;
 }
 
-export type ChartView = 'hourglass' | 'relatives' | 'fancy';
+export type ChartView = 'hourglass' | 'relatives';
 
 /** How to show dates before the Gregorian switch (Russia: 1918). */
 export type DateStyle = 'source' | 'both' | 'gregorian';

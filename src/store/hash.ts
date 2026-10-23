@@ -1,6 +1,6 @@
 import type {ChartView} from '../gedcom/types';
 
-export const VIEWS: ChartView[] = ['hourglass', 'relatives', 'fancy'];
+export const VIEWS: ChartView[] = ['hourglass', 'relatives'];
 
 export const isView = (v: unknown): v is ChartView =>
   typeof v === 'string' && (VIEWS as string[]).includes(v);

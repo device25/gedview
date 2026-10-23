@@ -1,12 +1,7 @@
 // Which child link a topola path draws, and how to style it. Pure functions:
 // the DOM is never consulted, only the node data topola binds to each path.
 
-import type {
-  ChartSettings,
-  ChartView,
-  ChildLinkStatus,
-  LoadedTree,
-} from '../gedcom/types';
+import type {ChartSettings, ChildLinkStatus, LoadedTree} from '../gedcom/types';
 
 /** The part of a laid-out topola node that link logic needs. */
 export interface LinkNode {
@@ -37,18 +32,13 @@ export interface ChildLink {
 
 /**
  * The child link drawn by the path bound to `d` (a node and its hierarchy
- * parent). Topola decides the direction by the generation number; the fan
- * chart is laid out upside down, so there the hierarchy child is always the
- * genealogical child. Marriage links between spouses have no child.
+ * parent). Topola decides the direction by the generation number. Marriage
+ * links between spouses have no child.
  */
-export function childLinkOf(
-  d: LinkNode,
-  view: ChartView,
-): ChildLink | undefined {
+export function childLinkOf(d: LinkNode): ChildLink | undefined {
   const other = d.parent;
   if (!other || d.data.additionalMarriage) return undefined;
-  const dIsChild =
-    view === 'fancy' ? true : d.data.generation > other.data.generation;
+  const dIsChild = d.data.generation > other.data.generation;
   const childNode = dIsChild ? d : other;
   const parentNode = dIsChild ? other : d;
   const famId = parentNode.data.family?.id;
