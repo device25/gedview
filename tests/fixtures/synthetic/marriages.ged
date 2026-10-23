@@ -1,0 +1,86 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+1 LANG ru
+0 @I1@ INDI
+1 NAME Иван Петрович /Соколов/
+1 SEX M
+1 BIRT
+2 DATE 1889
+1 DEAT
+2 DATE 1957
+1 FAMS @F1@
+0 @I2@ INDI
+1 NAME Евдокия Семёновна /Крылова/
+1 SEX F
+1 BIRT
+2 DATE 1893
+1 FAMS @F1@
+0 @I3@ INDI
+1 NAME Николай Иванович /Соколов/
+1 SEX M
+1 BIRT
+2 DATE 1913
+1 DEAT
+2 DATE 1942
+1 FAMC @F1@
+1 FAMS @F2@
+1 FAMS @F3@
+0 @I4@ INDI
+1 NAME Зоя Андреевна /Белова/
+1 SEX F
+1 BIRT
+2 DATE 1914
+1 FAMS @F2@
+0 @I5@ INDI
+1 NAME Клавдия Михайловна /Орлова/
+1 SEX F
+1 BIRT
+2 DATE 1916
+1 FAMS @F3@
+0 @I6@ INDI
+1 NAME Иван Николаевич /Соколов/
+1 SEX M
+1 BIRT
+2 DATE 1939
+1 FAMC @F3@
+0 @I7@ INDI
+1 NAME Александра Ивановна /Соколова/
+1 SEX F
+1 BIRT
+2 DATE 1919
+1 FAMC @F1@
+1 FAMS @F4@
+0 @I8@ INDI
+1 NAME Михаил Андреевич /Белов/
+1 SEX M
+1 FAMS @F4@
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
+1 CHIL @I7@
+1 MARR
+2 DATE 12 FEB 1912
+2 PLAC Старица, Тверская губерния
+0 @F2@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 MARR
+2 DATE 1934
+2 PLAC Калинин
+1 DIV
+2 DATE 1937
+0 @F3@ FAM
+1 HUSB @I3@
+1 WIFE @I5@
+1 CHIL @I6@
+1 MARR
+2 DATE 1938
+2 PLAC Калинин
+0 @F4@ FAM
+1 HUSB @I8@
+1 WIFE @I7@
+1 ENGA
+2 DATE 1938
+0 TRLR

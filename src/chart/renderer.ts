@@ -15,6 +15,7 @@ import {
 import type {IntlShape} from 'react-intl';
 import type {ChartSettings, IndiView, LoadedTree} from '../gedcom/types';
 import {displayName, initials, lifeSpan} from '../ui/format';
+import {familyBox, marriageOrder} from './family';
 import {cropBox, photoOf, type Photo} from './photo';
 import {wrapName, type Measure} from './text';
 
@@ -22,8 +23,14 @@ export const BOX_W = 176;
 export const BOX_H = 128;
 /** Space between the two boxes of a couple (and half of it around a box). */
 export const COUPLE_GAP = 24;
-/** Extra height under a row of boxes: room for the link and its label. */
-export const FAMILY_H = 32;
+/** Extra height under a couple: the family box and room for the links. */
+export const FAMILY_H = 60;
+/** The family box starts this far under the cards (the copies' connector
+ *  runs at half of it). */
+export const FAMILY_GAP = 16;
+const FAMILY_BOX_H = 44;
+/** Family box text (13px regular) against the 15px medium name font. */
+const FAMILY_SCALE = 0.82;
 
 const PAD = 14;
 const PHOTO = 40; // portrait (or initials) diameter, top left
@@ -122,15 +129,18 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     update.selectAll('g.gv-pair').remove();
     const all = enter.merge(update);
     this.nodes = all.data();
+    this.famsCache = undefined;
     const pairs = all.append('g').attr('class', 'gv-pair');
     pairs.each((node, i, groups) => {
       const g = select(groups[i] as SVGGElement) as unknown as Group;
       const {indi, spouse} = node.data;
-      if (indi) this.person(g, node.id!, 'indi', indi.id, 0);
+      const famId = node.data.family?.id;
+      if (indi) this.person(g, node.id!, 'indi', indi.id, 0, famId);
       if (spouse) {
         const x = indi ? indi.width! : 0;
-        this.person(g, node.id!, 'spouse', spouse.id, x);
+        this.person(g, node.id!, 'spouse', spouse.id, x, famId);
       }
+      if (indi && spouse && famId) this.familyBox(g, famId, indi.width!);
       if (indi && spouse) {
         // The marriage line between the two boxes.
         const y = BOX_H / 2;
@@ -150,6 +160,7 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     role: 'indi' | 'spouse',
     id: string,
     x: number,
+    famId?: string,
   ): void {
     const {settings} = this.ctx;
     const look = this.look(id);
@@ -207,15 +218,36 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
         .attr('text-anchor', 'end')
         .text(id);
     }
-    const rootTag = isRoot
-      ? this.ctx.intl.formatMessage({id: 'chart.root'})
-      : undefined;
+    const tags: string[] = [];
+    if (isRoot) tags.push(this.ctx.intl.formatMessage({id: 'chart.root'}));
+    const indiView = this.ctx.tree.indis.get(id);
+    const order =
+      famId && indiView
+        ? marriageOrder(this.ctx.tree, indiView, famId, (f) =>
+            this.drawnFams.has(f),
+          )
+        : undefined;
+    if (order)
+      tags.push(this.ctx.intl.formatMessage({id: 'family.order'}, {n: order}));
 
     // Name and dates under the portrait, across the whole width.
     const maxText = BOX_W - 2 * PAD;
     const lines = wrapName(look.name, maxText, this.ctx.measure);
+    // A name cut with an ellipsis is drawn beside the button, like the
+    // portrait: the accessible name has it whole, and the shown text must
+    // not contradict it.
+    const cut = lines.join(' ') !== look.name;
+    const nameLayer = cut
+      ? parent
+          .append('g')
+          .attr('class', 'gv-name-cut')
+          .attr('data-for', id)
+          .attr('aria-hidden', 'true')
+          .attr('transform', `translate(${x + inset} 0)`)
+      : g;
     lines.forEach((line, i) => {
-      g.append('text')
+      nameLayer
+        .append('text')
         .attr('class', 'gv-name')
         .attr('x', PAD)
         .attr('y', NAME_TOP + i * NAME_LINE)
@@ -234,7 +266,8 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       g.attr('aria-label', life ? `${look.name}, ${life}` : look.name);
       g.attr('aria-description', look.life);
     }
-    if (rootTag) g.attr('aria-label', `${g.attr('aria-label')}, ${rootTag}`);
+    if (tags.length)
+      g.attr('aria-label', [g.attr('aria-label'), ...tags].join(', '));
     if (life) {
       g.append('text')
         .attr('class', 'gv-life')
@@ -244,14 +277,68 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     }
     // Last in the box, so the text reads in the order of the accessible
     // name; drawn in the portrait row so the card keeps its height.
-    if (rootTag) {
+    tags.forEach((tag, i) => {
       g.append('text')
-        .attr('class', 'gv-root-tag')
+        .attr('class', 'gv-tag')
         .attr('x', BOX_W - 12)
-        .attr('y', PAD + 12)
+        .attr('y', PAD + 12 + i * 15)
         .attr('text-anchor', 'end')
-        .text(` ${rootTag}`);
+        .text(` ${tag}`);
+    });
+  }
+
+  /** Families drawn in this chart (a marriage order counts only these). */
+  private get drawnFams(): Set<string> {
+    if (!this.famsCache) {
+      this.famsCache = new Set(
+        this.nodes.flatMap((n) => (n.data.family ? [n.data.family.id] : [])),
+      );
     }
+    return this.famsCache;
+  }
+  private famsCache?: Set<string>;
+
+  /** The family box under a couple, on the line of descent. Decorative for
+   *  assistive technology: the card lists the same marriage. */
+  private familyBox(parent: Group, famId: string, unionX: number) {
+    const box = familyBox(this.ctx, famId);
+    if (!box) return;
+    const lines = [
+      (box.married ? '⚭ ' : '') + box.line1,
+      ...(box.line2 ? [box.line2] : []),
+    ];
+    const width = Math.min(
+      2 * BOX_W,
+      Math.max(
+        96,
+        ...lines.map((l) => this.ctx.measure(l) * FAMILY_SCALE + 24),
+      ),
+    );
+    const top = BOX_H + FAMILY_GAP;
+    const g = parent
+      .append('g')
+      .attr('class', 'gv-family')
+      .attr('data-fam', famId)
+      .attr('aria-hidden', 'true');
+    // From the marriage line down to the box, also when there are no children.
+    g.append('path')
+      .attr('class', 'gv-family-stem')
+      .attr('d', `M${unionX} ${BOX_H / 2}V${top}`);
+    g.append('rect')
+      .attr('class', 'gv-family-box')
+      .attr('x', unionX - width / 2)
+      .attr('y', top)
+      .attr('width', width)
+      .attr('height', lines.length > 1 ? FAMILY_BOX_H : FAMILY_BOX_H - 18)
+      .attr('rx', 10);
+    lines.forEach((line, i) => {
+      g.append('text')
+        .attr('class', i === 0 ? 'gv-family-line1' : 'gv-family-line2')
+        .attr('x', unionX)
+        .attr('y', top + 17 + i * 18)
+        .attr('text-anchor', 'middle')
+        .text(line);
+    });
   }
 
   /** A round portrait at the top left of the box: the photo over the

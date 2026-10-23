@@ -21,7 +21,8 @@ export default defineConfig({
     {
       name: 'e2e',
       testMatch: 'e2e/**/*.spec.ts',
-      use: {...devices['Desktop Chrome']},
+      // The chart header holds the scope controls: a laptop-sized window.
+      use: {...devices['Desktop Chrome'], viewport: {width: 1440, height: 900}},
     },
     {
       name: 'visual',

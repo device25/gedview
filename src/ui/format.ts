@@ -268,7 +268,7 @@ export function joinRange(a: string, b: string, locale: string): string {
 }
 
 /** The same date with every end reduced to its year ("около 1862"). */
-function yearOnly(date: ParsedDate | undefined): ParsedDate | undefined {
+export function yearOnly(date: ParsedDate | undefined): ParsedDate | undefined {
   if (!date) return undefined;
   const y = (c?: CalendarDate): CalendarDate | undefined =>
     c && {...c, day: undefined, month: undefined, monthIndex: undefined};
