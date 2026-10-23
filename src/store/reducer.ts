@@ -36,6 +36,9 @@ export interface AppState {
   cardOpen: boolean;
   /** false = minimised to its header. */
   cardExpanded: boolean;
+  /** On a phone the card is a sheet: up shows the whole card, down only
+   *  its header, so the chart keeps the screen. */
+  sheetUp: boolean;
   fullCardOpen: boolean;
   urlDialogOpen: boolean;
   /** Chart zoom factor; applied by the chart. */
@@ -63,6 +66,7 @@ export type Action =
   | {type: 'closeFlyout'; id?: FlyoutId}
   | {type: 'setCardOpen'; open: boolean}
   | {type: 'toggleCardExpanded'}
+  | {type: 'setSheetUp'; up: boolean}
   | {type: 'setFullCard'; open: boolean}
   | {type: 'setUrlDialog'; open: boolean}
   | {type: 'zoom'; mode: 'in' | 'out' | 'fit'}
@@ -90,6 +94,7 @@ export function createInitialState(
     flyout: null,
     cardOpen: true,
     cardExpanded: true,
+    sheetUp: false,
     fullCardOpen: false,
     urlDialogOpen: false,
     zoom: 1,
@@ -144,6 +149,7 @@ export function reducer(state: AppState, action: Action): AppState {
         flyout: null,
         cardOpen: true,
         cardExpanded: true,
+        sheetUp: false,
         fullCardOpen: false,
         urlDialogOpen: false,
         zoom: 1,
@@ -168,6 +174,7 @@ export function reducer(state: AppState, action: Action): AppState {
         rootId: onChart(state, action.id) ? state.rootId : action.id,
         cardOpen: true,
         cardExpanded: true,
+        sheetUp: false,
         flyout: null,
       };
     case 'setScope': {
@@ -217,7 +224,14 @@ export function reducer(state: AppState, action: Action): AppState {
       if (action.id && state.flyout !== action.id) return state;
       return {...state, flyout: null, peopleCheck: undefined};
     case 'setCardOpen':
-      return {...state, cardOpen: action.open, cardExpanded: true};
+      return {
+        ...state,
+        cardOpen: action.open,
+        cardExpanded: true,
+        sheetUp: false,
+      };
+    case 'setSheetUp':
+      return {...state, sheetUp: action.up};
     case 'toggleCardExpanded':
       return {...state, cardExpanded: !state.cardExpanded};
     case 'setFullCard':

@@ -176,7 +176,7 @@
     gap: 8px;
     width: 100%;
     max-width: none;
-    max-height: 52dvh;
+    max-height: 55dvh;
     padding: 0 20px 16px;
     border-radius: 22px 22px 0 0;
     box-shadow: 0 -6px 24px var(--shadow);
@@ -206,6 +206,11 @@
 
   .card__minimize {
     display: none;
+  }
+
+  /* Down, the sheet is its header: a tap on the name raises it. */
+  .card:not([data-expanded]) .card__title {
+    cursor: pointer;
   }
 
   .card__title h2 {

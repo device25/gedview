@@ -63,6 +63,9 @@ test.describe('accessibility on a phone', () => {
     await expectNoAxeViolations(page);
     await page.keyboard.press('Escape');
 
+    // The card opens lowered; raised, it shows everything.
+    await page.getByRole('button', {name: 'Развернуть карточку'}).click();
+    await expectNoAxeViolations(page);
     await page.getByRole('button', {name: 'Все сведения'}).click();
     await page.getByRole('dialog', {name: 'Иван Петрович Соколов'}).waitFor();
     await expectNoAxeViolations(page);
