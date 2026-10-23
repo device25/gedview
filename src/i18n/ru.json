@@ -449,5 +449,18 @@
   "settings.cardColor.decade": "По десятилетию рождения",
   "legend.decades": "Цвет карточки — десятилетие рождения, от {first} до {last}",
   "legend.decadesUnknown": "белые — год неизвестен",
-  "legend.decade": "{decade}-х"
+  "legend.decade": "{decade}-х",
+  "card.photo": "Фото: {title}. Открыть просмотр",
+  "card.media": "Медиа",
+  "card.mediaOpen": "Открыть просмотр: {title}",
+  "card.mediaMore": "ещё {count}",
+  "media.remoteTile": "Изображения по ссылкам не загружаются: запрос сообщил бы другому сайту, кто смотрит.",
+  "media.remoteEnable": "Показывать изображения по ссылкам",
+  "media.remoteHosts": "Файлы будут загружаться с {hosts}",
+  "viewer.count": "{at} из {count}",
+  "viewer.original": "Открыть оригинал",
+  "viewer.close": "Закрыть просмотр",
+  "viewer.prev": "Предыдущий файл",
+  "viewer.next": "Следующий файл",
+  "viewer.noPreview": "Предпросмотра нет"
 }

@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
   Button,
   Dialog,
@@ -11,7 +11,6 @@ import type {
   ExternalId,
   IndiView,
   LoadedTree,
-  MediaLink,
   PersonName,
 } from '../gedcom/types';
 import {useAppState, useDispatch} from '../store';
@@ -22,7 +21,8 @@ import {Icon} from './icons';
 import {localName, nameForms, pickVariant} from './lang';
 import {langArg, NoteView} from './NoteView';
 import {safeHref} from './html';
-import {isImageFile, mediaUrl} from '../load';
+import {blockedHosts, mediaEntries, type MediaEntry} from './media';
+import {RemoteOff} from './MediaParts';
 import {PersonLink} from './PersonLink';
 import {HiddenNote, parentsLabel, statusText} from './relatives';
 import {
@@ -60,7 +60,17 @@ export function FullCard() {
 function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
   const intl = useIntl();
   const dispatch = useDispatch();
-  const {settings, lang} = useAppState();
+  const {settings, lang, fullCardSection} = useAppState();
+  // Opened at a section («ещё N» media on the card): bring it into view.
+  useEffect(() => {
+    if (!fullCardSection) return;
+    const frame = requestAnimationFrame(() =>
+      document
+        .getElementById(`full-${fullCardSection}`)
+        ?.scrollIntoView({block: 'start'}),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [fullCardSection]);
   // Reveal applies to this card only: the body is re-created per person.
   const [reveal, setReveal] = useState(false);
   const t = (id: string) => intl.formatMessage({id});
@@ -75,6 +85,10 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
   );
   const notes = splitByResn(indi.notes, restrictionsOf, hide);
   const media = splitByResn(indi.media, (m) => m, hide);
+  const entries = mediaEntries(tree, indi, {
+    hide,
+    allowRemote: settings.loadRemoteMedia,
+  });
   const hiddenRecords = [
     ...events.hidden.map((i) => i.event),
     ...notes.hidden.map(restrictionsOf),
@@ -306,14 +320,24 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
         ))}
       </Section>
 
-      <Section
-        id="media"
-        title={t('full.media')}
-        show={media.visible.length > 0}
-      >
-        {media.visible.map((m, i) => (
-          <MediaItem key={i} media={m} tree={tree} />
+      <Section id="media" title={t('full.media')} show={entries.length > 0}>
+        {entries.map((e, i) => (
+          <MediaItem
+            key={i}
+            entry={e}
+            onView={() =>
+              dispatch({
+                type: 'openViewer',
+                id: indi.id,
+                index: i,
+                revealed: !hide,
+              })
+            }
+          />
         ))}
+        {blockedHosts(entries).length > 0 && (
+          <RemoteOff hosts={blockedHosts(entries)} />
+        )}
       </Section>
 
       <Section id="links" title={t('full.links')} show={indi.exids.length > 0}>
@@ -534,37 +558,10 @@ function ChildLine({
   );
 }
 
-/** A readable name for a file without a title: its decoded file name. */
-function fileLabel(path: string): string {
-  const name = path.split(/[?#]/)[0]!.split(/[\\/]/).pop() || path;
-  try {
-    return decodeURIComponent(name);
-  } catch {
-    return name;
-  }
-}
-
-/** Where the file can be shown from: a bundled blob, or a link in the file. */
-function resolveMedia(
-  tree: LoadedTree,
-  path: string,
-  allowRemote: boolean,
-): {src?: string; remote: boolean} {
-  const url = mediaUrl(tree.media, path);
-  if (!url) return {remote: false};
-  const remote = /^https?:/i.test(url);
-  return remote && !allowRemote ? {remote} : {src: url, remote};
-}
-
-function MediaItem({media, tree}: {media: MediaLink; tree: LoadedTree}) {
+function MediaItem({entry, onView}: {entry: MediaEntry; onView: () => void}) {
   const intl = useIntl();
-  const {settings} = useAppState();
   const [failed, setFailed] = useState(false);
-  const file = media.files[0];
-  if (!file) return null;
-  const {src, remote} = resolveMedia(tree, file.path, settings.loadRemoteMedia);
-  const isImage = isImageFile(file);
-  const title = media.title ?? file.title ?? fileLabel(file.path);
+  const {media, file, src, remote, image, title} = entry;
   const link = remote ? safeHref(file.path) : undefined;
   const meta = [
     file.mime,
@@ -582,21 +579,27 @@ function MediaItem({media, tree}: {media: MediaLink; tree: LoadedTree}) {
       : '',
   ].filter(Boolean);
   const empty = (id: string) => (
-    <div className="media__thumb media__thumb--empty" aria-hidden="true">
+    <span className="media__thumb media__thumb--empty" aria-hidden="true">
       {intl.formatMessage({id})}
-    </div>
+    </span>
   );
   return (
     <div className="media">
-      {isImage && src && !failed ? (
-        <img
-          className="media__thumb"
-          src={src}
-          alt=""
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
-        />
+      {image && src && !failed ? (
+        <Button
+          className="media__open"
+          aria-label={intl.formatMessage({id: 'card.mediaOpen'}, {title})}
+          onPress={onView}
+        >
+          <img
+            className="media__thumb"
+            src={src}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setFailed(true)}
+          />
+        </Button>
       ) : failed ? (
         empty('media.failed')
       ) : remote && !src ? (
