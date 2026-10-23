@@ -1,4 +1,5 @@
 import {expect, test} from '@playwright/test';
+import {MAP_ENABLED} from '../../src/features';
 
 async function ready(page: import('@playwright/test').Page, path = '/?demo') {
   await page.goto(path);
@@ -72,6 +73,7 @@ test('summary, light', async ({page}) => {
 });
 
 test('map, light', async ({page}) => {
+  test.skip(!MAP_ENABLED, 'the map is hidden until it is reviewed again');
   await page.emulateMedia({colorScheme: 'light'});
   await page.goto('/?demo#mode=map&map=path&id=I1');
   await expect(page.locator('path.gv-map-land')).toHaveCount(1);

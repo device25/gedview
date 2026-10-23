@@ -5,6 +5,7 @@ import {useAppState, useDispatch, useResolvedTheme} from '../store';
 import {Flyout} from './Flyout';
 import {Icon, Logo, type IconName} from './icons';
 import {Tip} from './Tip';
+import {MAP_ENABLED} from '../features';
 import {
   ExportPanel,
   LanguagePanel,
@@ -18,8 +19,12 @@ import './rail.css';
  *  sits 14px closer to keep its usual 10px distance from the pill. */
 const RAIL_TIP_OFFSET = -4;
 
-const isMode = (id: string): id is 'chart' | 'summary' | 'map' =>
-  id === 'chart' || id === 'summary' || id === 'map';
+const MODES = (['chart', 'summary', 'map'] as const).filter(
+  (m) => m !== 'map' || MAP_ENABLED,
+);
+
+const isMode = (id: string): id is (typeof MODES)[number] =>
+  (MODES as readonly string[]).includes(id);
 
 /** Left icon rail on desktop. */
 export function Rail() {
@@ -68,7 +73,7 @@ export function Rail() {
   return (
     <nav className="rail" aria-label={t('nav.label')}>
       <Logo />
-      {(['chart', 'summary', 'map'] as const).map((mode) => {
+      {MODES.map((mode) => {
         const current = !noTree && flyout === null && state.mode === mode;
         const label = t(`nav.${mode}`);
         return (
@@ -253,13 +258,14 @@ export function MobileNav() {
         flyout === null && mode === 'summary',
         noTree,
       )}
-      {item(
-        'map',
-        'map',
-        t('nav.map'),
-        flyout === null && mode === 'map',
-        noTree,
-      )}
+      {MAP_ENABLED &&
+        item(
+          'map',
+          'map',
+          t('nav.map'),
+          flyout === null && mode === 'map',
+          noTree,
+        )}
       <Flyout
         id="people"
         disabled={noTree}
