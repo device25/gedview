@@ -99,14 +99,25 @@ const note = (
   ...extra,
 });
 
-const place = (parts: string[]): Place => ({
-  raw: parts.join(', '),
-  parts,
-  form: [],
-  translations: [],
-  exids: [],
-  notes: [],
-});
+// Coordinates for «Карта»; «д. Горки» has none, so the map shows a gap.
+const COORDS: Record<string, [number, number]> = {
+  'с. Покровское': [56.5, 34.9],
+  'Покровская церковь': [56.5, 34.9],
+  'г. Калинин': [56.86, 35.9],
+};
+
+const place = (parts: string[]): Place => {
+  const at = COORDS[parts[0]!];
+  return {
+    raw: parts.join(', '),
+    parts,
+    form: [],
+    translations: [],
+    exids: [],
+    notes: [],
+    ...(at ? {latitude: at[0], longitude: at[1]} : {}),
+  };
+};
 
 const cite = (
   sourceId: string | undefined,

@@ -4,8 +4,10 @@ import {DEFAULT_SETTINGS, type Persisted, type ThemePref} from './persist';
 import type {CheckId} from '../model/checks';
 import {DEFAULT_SCOPE, type HashState, type ScopeShape} from './hash';
 
-/** The sections of the app: the chart and the summary. */
-export type Mode = 'chart' | 'summary';
+/** The sections of the app: the chart, the summary and the map. */
+export type Mode = 'chart' | 'summary' | 'map';
+/** What the map shows. */
+export type MapView = 'places' | 'path' | 'spread';
 
 export type FlyoutId = 'people' | 'sources' | 'export' | 'settings' | 'lang';
 
@@ -23,6 +25,7 @@ export interface AppState {
   /** Who the chart shows and how many generations. */
   scope: ScopeShape;
   mode: Mode;
+  mapView: MapView;
   /** The People panel lists the findings of this check (from «Сводка»). */
   peopleCheck?: CheckId;
   settings: ChartSettings;
@@ -50,6 +53,7 @@ export type Action =
   | {type: 'setScope'; patch: Partial<ScopeShape>}
   | {type: 'reroot'; id: string}
   | {type: 'setMode'; mode: Mode}
+  | {type: 'setMapView'; view: MapView}
   | {type: 'showCheck'; check: CheckId | undefined}
   | {type: 'hashChanged'; hash: HashState}
   | {type: 'setSettings'; patch: Partial<ChartSettings>}
@@ -78,6 +82,7 @@ export function createInitialState(
   return {
     scope: scopeFromHash(hash, DEFAULT_SCOPE),
     mode: hash.mode ?? 'chart',
+    mapView: hash.map ?? 'places',
     settings: persisted.settings ?? DEFAULT_SETTINGS,
     theme: persisted.theme ?? 'system',
     lang,
@@ -156,8 +161,9 @@ export function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         selectedId: action.id,
-        // A person is shown on the chart, with their card.
-        mode: 'chart',
+        // A person is shown on the chart, with their card; the map stays
+        // and follows them.
+        mode: state.mode === 'map' ? 'map' : 'chart',
         // Someone the chart does not show becomes the root, so they are seen.
         rootId: onChart(state, action.id) ? state.rootId : action.id,
         cardOpen: true,
@@ -173,6 +179,8 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case 'setMode':
       return {...state, mode: action.mode, flyout: null};
+    case 'setMapView':
+      return {...state, mapView: action.view};
     case 'showCheck':
       return {
         ...state,
@@ -187,6 +195,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         scope: scopeFromHash(action.hash, state.scope),
         mode: action.hash.mode ?? 'chart',
+        mapView: action.hash.map ?? 'places',
       };
       const has = (id?: string) => !!id && !!state.tree?.indis.has(id);
       if (has(action.hash.id)) next.selectedId = action.hash.id;

@@ -11,8 +11,10 @@ export type ScopeShape = Pick<ChartScope, 'level' | 'up' | 'down'>;
 export const DEFAULT_SCOPE: ScopeShape = {level: 'direct', up: 4, down: 3};
 
 export interface HashState {
-  /** Only the summary is named; the chart is the default. */
-  mode?: 'summary';
+  /** The chart is the default and is not named. */
+  mode?: 'summary' | 'map';
+  /** What the map shows; places by default. */
+  map?: 'path' | 'spread';
   id?: string;
   root?: string;
   level?: BreadthLevel;
@@ -35,7 +37,10 @@ function generations(v: string | null, min: number): number | undefined {
 export function parseHash(hash: string): HashState {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const out: HashState = {};
-  if (params.get('mode') === 'summary') out.mode = 'summary';
+  const mode = params.get('mode');
+  if (mode === 'summary' || mode === 'map') out.mode = mode;
+  const map = params.get('map');
+  if (map === 'path' || map === 'spread') out.map = map;
   const id = params.get('id');
   if (id) out.id = id;
   const root = params.get('root');
@@ -51,11 +56,14 @@ export function parseHash(hash: string): HashState {
 
 /** The selected person, and the root when it is someone else. */
 export function buildHash(
-  scope: ScopeShape & {rootId?: string; mode?: string},
+  scope: ScopeShape & {rootId?: string; mode?: string; mapView?: string},
   id?: string,
 ): string {
   const params = new URLSearchParams();
-  if (scope.mode === 'summary') params.set('mode', 'summary');
+  if (scope.mode === 'summary' || scope.mode === 'map')
+    params.set('mode', scope.mode);
+  if (scope.mode === 'map' && scope.mapView && scope.mapView !== 'places')
+    params.set('map', scope.mapView);
   if (id) params.set('id', id);
   if (scope.rootId && scope.rootId !== id) params.set('root', scope.rootId);
   params.set('level', scope.level);

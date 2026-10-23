@@ -186,6 +186,20 @@ describe('flyouts and card', () => {
   });
 });
 
+describe('sections', () => {
+  it('choosing a person keeps the map and leaves the summary for the chart', () => {
+    const map = reducer(loaded(), {type: 'setMode', mode: 'map'});
+    expect(reducer(map, {type: 'select', id: 'I2'}).mode).toBe('map');
+    const summary = reducer(loaded(), {type: 'setMode', mode: 'summary'});
+    expect(reducer(summary, {type: 'select', id: 'I2'}).mode).toBe('chart');
+  });
+
+  it('remembers the map view', () => {
+    const s = reducer(loaded(), {type: 'setMapView', view: 'spread'});
+    expect(s.mapView).toBe('spread');
+  });
+});
+
 describe('settings, theme, zoom', () => {
   it('merges settings patches', () => {
     const s = reducer(initial(), {type: 'setSettings', patch: {showIds: true}});

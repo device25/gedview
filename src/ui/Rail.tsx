@@ -18,6 +18,9 @@ import './rail.css';
  *  sits 14px closer to keep its usual 10px distance from the pill. */
 const RAIL_TIP_OFFSET = -4;
 
+const isMode = (id: string): id is 'chart' | 'summary' | 'map' =>
+  id === 'chart' || id === 'summary' || id === 'map';
+
 /** Left icon rail on desktop. */
 export function Rail() {
   const state = useAppState();
@@ -65,9 +68,9 @@ export function Rail() {
   return (
     <nav className="rail" aria-label={t('nav.label')}>
       <Logo />
-      {(['chart', 'summary'] as const).map((mode) => {
+      {(['chart', 'summary', 'map'] as const).map((mode) => {
         const current = !noTree && flyout === null && state.mode === mode;
-        const label = t(mode === 'chart' ? 'nav.chart' : 'nav.summary');
+        const label = t(`nav.${mode}`);
         return (
           <Tip
             key={mode}
@@ -86,7 +89,7 @@ export function Rail() {
               }}
             >
               <span className="rail__pill">
-                <Icon name={mode === 'chart' ? 'tree' : 'summary'} />
+                <Icon name={mode === 'chart' ? 'tree' : mode} />
               </span>
             </Button>
           </Tip>
@@ -224,13 +227,9 @@ export function MobileNav() {
       className="tabbar__btn"
       isDisabled={disabled}
       data-active={active || undefined}
-      aria-current={
-        (id === 'chart' || id === 'summary') && active ? 'page' : undefined
-      }
+      aria-current={isMode(id) && active ? 'page' : undefined}
       onPress={
-        id === 'chart' || id === 'summary'
-          ? () => dispatch({type: 'setMode', mode: id})
-          : undefined
+        isMode(id) ? () => dispatch({type: 'setMode', mode: id}) : undefined
       }
     >
       <Icon name={icon} />
@@ -252,6 +251,13 @@ export function MobileNav() {
         'summary',
         t('nav.summary'),
         flyout === null && mode === 'summary',
+        noTree,
+      )}
+      {item(
+        'map',
+        'map',
+        t('nav.map'),
+        flyout === null && mode === 'map',
         noTree,
       )}
       <Flyout

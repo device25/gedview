@@ -7,6 +7,7 @@ import {FileActions} from './FileActions';
 import {Icon} from './icons';
 import {PersonCard} from './PersonCard';
 import {ScopeBar, ScopeSheet} from './ScopeControls';
+import {MapSection} from '../map/MapSection';
 import {Summary} from './Summary';
 import {treeTitle} from './treeInfo';
 import './workspace.css';
@@ -21,6 +22,8 @@ export function Workspace() {
   const scope = chartScope(state);
   if (!tree || !selectedId || !scope) return null;
   const summary = state.mode === 'summary';
+  const map = state.mode === 'map';
+  const chart = !summary && !map;
   const t = (id: string) => intl.formatMessage({id});
 
   const count = tree.indis.size;
@@ -35,7 +38,7 @@ export function Workspace() {
       <header className="header">
         <div className="header__main">
           <h1 className="header__title">{treeTitle(tree)}</h1>
-          {isMobile && !summary && <ScopeSheet />}
+          {isMobile && chart && <ScopeSheet />}
         </div>
         {isMobile ? (
           <Button
@@ -51,11 +54,13 @@ export function Workspace() {
             <FileActions />
           </>
         )}
-        {!isMobile && !summary && <ScopeBar />}
+        {!isMobile && chart && <ScopeBar />}
       </header>
 
       {summary ? (
         <Summary />
+      ) : map ? (
+        <MapSection />
       ) : (
         <>
           <div className={cardOpen ? 'chart chart--card' : 'chart'}>

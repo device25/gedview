@@ -70,3 +70,10 @@ test('summary, light', async ({page}) => {
   ).toBeVisible();
   await expect(page).toHaveScreenshot('summary-light.png', {fullPage: true});
 });
+
+test('map, light', async ({page}) => {
+  await page.emulateMedia({colorScheme: 'light'});
+  await page.goto('/?demo#mode=map&map=path&id=I1');
+  await expect(page.locator('path.gv-map-land')).toHaveCount(1);
+  await expect(page).toHaveScreenshot('map-light.png');
+});

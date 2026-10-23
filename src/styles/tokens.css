@@ -23,6 +23,10 @@
   --shadow: rgba(30, 25, 15, 0.1);
   --border: #e4e2dd;
   --scrim: rgba(20, 18, 12, 0.35);
+  /* «Карта»: land, water and the water's outline. */
+  --land: #f4f3f0;
+  --water: #e3e9f1;
+  --water-line: #c9d6e8;
   --radius-s: 10px;
   --radius-m: 14px;
   --radius-l: 20px;
@@ -52,6 +56,9 @@
     --shadow: rgba(0, 0, 0, 0.5);
     --border: #35373b;
     --scrim: rgba(0, 0, 0, 0.6);
+    --land: #1a1b1d;
+    --water: #15191f;
+    --water-line: #2a3442;
   }
 }
 
@@ -77,6 +84,9 @@
   --shadow: rgba(0, 0, 0, 0.5);
   --border: #35373b;
   --scrim: rgba(0, 0, 0, 0.6);
+  --land: #1a1b1d;
+  --water: #15191f;
+  --water-line: #2a3442;
 }
 
 body {
