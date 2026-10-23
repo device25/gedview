@@ -7,6 +7,10 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # typescript-eslint supports TypeScript < 6.1 only.
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
     commit-message:
       prefix: chore
       include: scope
