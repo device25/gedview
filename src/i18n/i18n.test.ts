@@ -66,7 +66,7 @@ describe('message files', () => {
 
 describe('languages', () => {
   it('lists a language per message file with its own name', () => {
-    expect(languages.map((l) => l.code)).toEqual(['en', 'ru']);
+    expect(languages.map((l) => l.code)).toEqual(['ru', 'en']);
     expect(languages.find((l) => l.code === 'ru')).toMatchObject({
       name: 'Русский',
       short: 'RU',
