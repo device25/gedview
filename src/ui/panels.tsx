@@ -18,9 +18,78 @@ import {CheckField, SelectField} from './controls';
 import {FileActions} from './FileActions';
 import {Icon} from './icons';
 import {buildIndex, searchPeople} from './search';
+import {runChecks, todayJdn} from '../model/checks';
+import {displayName, formatDate} from './format';
+import {eventLabel} from './events';
 import {listSources} from './treeInfo';
 
 export function PeoplePanel() {
+  const {peopleCheck} = useAppState();
+  return peopleCheck ? <CheckList /> : <PeopleSearch />;
+}
+
+/** The people a «Сводка» check is about, each with the facts involved. */
+function CheckList() {
+  const {tree, lang, settings, peopleCheck} = useAppState();
+  const dispatch = useDispatch();
+  const intl = useIntl();
+  const findings = useMemo(
+    () => (tree && peopleCheck ? runChecks(tree, todayJdn())[peopleCheck] : []),
+    [tree, peopleCheck],
+  );
+  if (!tree || !peopleCheck) return null;
+  const check = intl.formatMessage({id: `check.${peopleCheck}`});
+  const o = {locale: lang, style: settings.dateStyle};
+  return (
+    <div className="check-list">
+      <div className="check-list__filter">
+        <span>{intl.formatMessage({id: 'people.check'}, {check})}</span>
+        <Button
+          className="icon-btn"
+          aria-label={intl.formatMessage({id: 'people.clearCheck'}, {check})}
+          onPress={() => dispatch({type: 'showCheck', check: undefined})}
+        >
+          <Icon name="close" size={14} strokeWidth={2.2} />
+        </Button>
+      </div>
+      <p role="status" className="muted">
+        {intl.formatMessage({id: 'people.found'}, {n: findings.length})}
+      </p>
+      <ListBox
+        className="results"
+        aria-label={check}
+        items={findings.map((f) => ({...f, key: f.id}))}
+        selectionMode="none"
+        onAction={(key) => dispatch({type: 'select', id: String(key)})}
+      >
+        {(f) => {
+          const name = displayName(tree.indis.get(f.id), f.id);
+          const facts = f.events
+            .map((e) =>
+              [
+                eventLabel(intl, e),
+                formatDate(e.date, o),
+                e.who !== f.id
+                  ? `(${displayName(tree.indis.get(e.who), e.who)})`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' '),
+            )
+            .join(' · ');
+          return (
+            <ListBoxItem id={f.id} textValue={name} className="results__item">
+              <span className="results__name">{name}</span>
+              {facts && <span className="results__life">{facts}</span>}
+            </ListBoxItem>
+          );
+        }}
+      </ListBox>
+    </div>
+  );
+}
+
+function PeopleSearch() {
   const {tree, lang, settings, selectedId} = useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();

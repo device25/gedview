@@ -310,3 +310,21 @@
   font-size: 13px;
   color: var(--warn-text);
 }
+
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check-list__filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--text);
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}

@@ -53,7 +53,7 @@ function useLevelCounts(): Record<BreadthLevel, number> | undefined {
 }
 
 /** «От кого считать»: a searchable list of everyone in the tree. */
-function RootPicker() {
+export function RootPicker() {
   const {tree, rootId, lang, settings} = useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();

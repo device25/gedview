@@ -14,6 +14,9 @@
   --warn-line: #b06f00;
   --warn-text: #7a4a00;
   --warn-bg: #fff0d2;
+  --err: #a3301e;
+  --err-text: #7e2214;
+  --err-bg: #fbe3de;
   --male: #3b6fd4;
   --female: #c8486e;
   --sel-ring: #1a1a1a;
@@ -40,6 +43,9 @@
     --warn-line: #e9a23b;
     --warn-text: #f2c27a;
     --warn-bg: #3a2a10;
+    --err: #f08a78;
+    --err-text: #f5b3a8;
+    --err-bg: #3d1b16;
     --male: #7fa6e8;
     --female: #e58fa9;
     --sel-ring: #8fb0f0;
@@ -62,6 +68,9 @@
   --warn-line: #e9a23b;
   --warn-text: #f2c27a;
   --warn-bg: #3a2a10;
+  --err: #f08a78;
+  --err-text: #f5b3a8;
+  --err-bg: #3d1b16;
   --male: #7fa6e8;
   --female: #e58fa9;
   --sel-ring: #8fb0f0;
