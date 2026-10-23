@@ -1,8 +1,17 @@
-// TEMPORARY STUB: replaced by part A (src/load). Do not build on it.
-import type {LoadError, LoadTree} from '../gedcom/types';
-
-export const loadTree: LoadTree = async () => {
-  const error = new Error('Loader is not implemented yet') as LoadError;
-  error.code = 'NOT_GEDCOM';
-  throw error;
-};
+export {isLoadError, loadError} from './errors';
+export {
+  createLoadTree,
+  loadTree,
+  MAX_FILE_BYTES,
+  MAX_URL_BYTES,
+  revokeTreeMedia,
+} from './loader';
+export type {LoaderDeps} from './loader';
+export {looksLikeZip, unpackGedzip} from './zip';
+export {
+  decodeFilePath,
+  isImageFile,
+  lookupMedia,
+  mediaUrl,
+  safeMediaUrl,
+} from '../model/mediaUrl';
