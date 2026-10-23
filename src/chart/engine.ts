@@ -57,6 +57,9 @@ const CHARTS: Record<ChartView, new (options: ChartOptions) => Chart> = {
   relatives: RelativesChart,
 };
 
+/** Quiet time after the last wheel/drag event before the scale is reported. */
+const REPORT_DELAY_MS = 120;
+
 const FONT_FAMILY = 'Onest, system-ui, sans-serif';
 const FONT_SAMPLE = 'Аа Aa';
 /** Below this scale the names are unreadable and are not drawn. */
@@ -107,7 +110,9 @@ export class ChartEngine {
    *  new move does not depend on how far an interrupted one got. */
   private goal: Xform = {x: 0, y: 0, k: 1};
   private token = 0;
-  private reportFrame = 0;
+  private reportTimer = 0;
+  /** The last scale reported to the app; its echo must not move the view. */
+  private reported = 1;
   private destroyed = false;
   private pendingFit = false;
   private draws = 0;
@@ -195,19 +200,30 @@ export class ChartEngine {
     });
   }
 
-  /** The zoom factor was changed from outside (the zoom buttons). */
+  /** The zoom factor was changed from outside (the zoom buttons). The app
+   *  derives it from the last reported scale, so it is applied as a factor
+   *  to the current view; our own report echoed back changes nothing. */
   setZoom(k: number): void {
     const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, k));
+    if (Math.abs(next - this.reported) <= 1e-4 * next) return;
     const g = this.goal;
-    if (Math.abs(next - g.k) <= 1e-4 * g.k) return;
+    const target = Math.min(
+      ZOOM_MAX,
+      Math.max(ZOOM_MIN, g.k * (next / this.reported)),
+    );
+    window.clearTimeout(this.reportTimer);
+    this.reportTimer = 0;
+    this.reported = target;
+    if (Math.abs(target - next) > 1e-4 * next) this.callbacks.onZoom(target);
+    if (Math.abs(target - g.k) <= 1e-4 * g.k) return;
     if (!this.built) {
-      this.goal = {...g, k: next};
+      this.goal = {...g, k: target};
       return;
     }
     // Scale about the middle of the view.
     const cx = (this.size.w / 2 - g.x) / g.k;
     const cy = (this.size.h / 2 - g.y) / g.k;
-    this.moveTo(centerXform(cx, cy, next, this.size), 150);
+    this.moveTo(centerXform(cx, cy, target, this.size), 150);
   }
 
   /** Fits the whole chart into the view and reports the resulting scale. */
@@ -226,7 +242,7 @@ export class ChartEngine {
         ? [this.chartSize.w / 2, this.chartSize.h / 2]
         : [focus.cx, focus.cy];
     this.moveTo(centerXform(cx, cy, k, this.size));
-    this.callbacks.onZoom(k);
+    this.report(k);
   }
 
   destroy(): void {
@@ -234,7 +250,7 @@ export class ChartEngine {
     this.token++;
     this.abort.abort();
     this.resizer.disconnect();
-    cancelAnimationFrame(this.reportFrame);
+    window.clearTimeout(this.reportTimer);
     this.svg.on('.zoom', null).interrupt();
     this.layer.remove();
   }
@@ -270,6 +286,7 @@ export class ChartEngine {
         ctx,
       );
       this.goal = {...this.goal, k: input.zoom};
+      this.reported = input.zoom;
     }
     this.currentSelected = selectedId;
     const renderer = this.renderer!;
@@ -482,12 +499,20 @@ export class ChartEngine {
     }
   }
 
+  /** Tells the app the new scale once the gesture settles. Reporting every
+   *  frame re-rendered the app during fast wheel scrolling, and the stale
+   *  value echoed back pulled the view against the wheel. */
   private scheduleReport(): void {
-    if (this.reportFrame) return;
-    this.reportFrame = requestAnimationFrame(() => {
-      this.reportFrame = 0;
-      this.callbacks.onZoom(this.goal.k);
-    });
+    window.clearTimeout(this.reportTimer);
+    this.reportTimer = window.setTimeout(() => {
+      this.reportTimer = 0;
+      this.report(this.goal.k);
+    }, REPORT_DELAY_MS);
+  }
+
+  private report(k: number): void {
+    this.reported = k;
+    this.callbacks.onZoom(k);
   }
 
   private onResize(): void {
