@@ -193,9 +193,13 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     // the accessible name, and clicks go through to the card underneath.
     this.portrait(parent, x + inset, id, photo, look.name, sexClass);
     if (settings.showIds) {
-      g.append('text')
+      // Beside the button too: the id is not part of the person's name.
+      parent
+        .append('text')
         .attr('class', 'gv-id')
-        .attr('x', BOX_W - 12)
+        .attr('data-for', id)
+        .attr('aria-hidden', 'true')
+        .attr('x', x + inset + BOX_W - 12)
         .attr('y', PAD + 12)
         .attr('text-anchor', 'end')
         .text(id);
