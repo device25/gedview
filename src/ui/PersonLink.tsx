@@ -15,6 +15,7 @@ export function PersonLink({
   onSelect?: () => void;
   className?: string;
   'data-disputed'?: boolean;
+  'data-disproven'?: boolean;
 }) {
   const {view} = useAppState();
   const dispatch = useDispatch();

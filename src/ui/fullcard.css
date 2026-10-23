@@ -270,3 +270,104 @@ code {
     border-radius: 0;
   }
 }
+
+/* Notes, HTML notes and translation switch */
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-html > :first-child,
+.note-html p {
+  margin: 0 0 6px;
+}
+
+.note-html > :last-child {
+  margin-bottom: 0;
+}
+
+.note-html ul,
+.note-html ol {
+  margin: 0 0 6px;
+  padding-left: 20px;
+}
+
+.note-html blockquote,
+.note-quote {
+  margin: 2px 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--page);
+  font-size: 13px;
+}
+
+.note-quote .note-text,
+.note-quote .note-html p {
+  margin: 0;
+}
+
+.note-variant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page);
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.events--none .event__label {
+  color: var(--warn-text);
+}
+
+.assoc__role {
+  color: var(--text-2);
+}
+
+.chip[data-disproven],
+.child[data-disproven] a,
+.relatives a[data-disproven] {
+  text-decoration: line-through;
+}
+
+.chip[data-disproven] {
+  border-style: dotted;
+}
+
+.chip--void {
+  border-style: dashed;
+  color: var(--text-2);
+}
+
+.child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+}
+
+.pill[data-quality='0'],
+.pill[data-quality='1'] {
+  border-color: var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+/* Links inside running or muted text must not rely on colour alone. */
+.link--ul {
+  text-decoration: underline;
+}

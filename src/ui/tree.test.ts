@@ -4,8 +4,10 @@ import {buildIndex, searchPeople} from './search';
 import {
   cardEvents,
   CitationIndex,
+  hidingMarks,
   listSources,
   relativesOf,
+  splitByResn,
   treeTitle,
 } from './treeInfo';
 
@@ -23,7 +25,13 @@ describe('treeInfo', () => {
   });
 
   it('lists sources by title', () => {
-    expect(listSources(mockTree).map((s) => s.id)).toEqual(['S1', 'S2', 'S3']);
+    expect(listSources(mockTree).map((s) => s.id)).toEqual([
+      'S1',
+      'S2',
+      'S3',
+      'S4',
+      'S5',
+    ]);
   });
 
   it('finds parents, spouse and children', () => {
@@ -36,7 +44,16 @@ describe('treeInfo', () => {
 
   it('inserts the family marriage before the first later-dated event', () => {
     const tags = cardEvents(mockTree, ivan).map((c) => c.event.tag);
-    expect(tags).toEqual(['BIRT', 'CHR', 'CENS', 'EVEN', 'MARR', 'DEAT']);
+    expect(tags).toEqual([
+      'BIRT',
+      'CHR',
+      'CENS',
+      'MARR',
+      'RESI',
+      'OCCU',
+      'EVEN',
+      'DEAT',
+    ]);
     expect(cardEvents(mockTree, ivan).find((c) => c.famId)?.famId).toBe('F2');
   });
 
@@ -50,6 +67,64 @@ describe('treeInfo', () => {
     expect(idx.add(b)).toBe(1);
     expect(idx.add(ivan.events[2]!.citations[0]!)).toBe(2);
     expect(idx.items).toHaveLength(2);
+  });
+});
+
+describe('card data', () => {
+  it('groups parents per FAMC with pedigree and status', () => {
+    const groups = relativesOf(mockTree, ivan).parents;
+    expect(groups.map((g) => [g.famId, g.pedigree, g.status])).toEqual([
+      ['F1', 'BIRTH', 'CHALLENGED'],
+      ['F4', 'ADOPTED', undefined],
+      ['F5', 'BIRTH', 'DISPROVEN'],
+    ]);
+    expect(groups[1]?.pedigreePhrase).toBe('усыновлён отчимом');
+    expect(groups[2]?.statusPhrase).toContain('опровергнуто');
+    // A disproven link is still listed.
+    expect(groups[2]?.people.map((p) => p.id)).toEqual(['I9']);
+  });
+
+  it('lists the children under their own family', () => {
+    const rel = relativesOf(mockTree, ivan);
+    expect(rel.spouses[0]?.children.map((c) => c.indi.id)).toEqual([
+      'I5',
+      'I6',
+    ]);
+    const semyon = relativesOf(mockTree, mockTree.indis.get('I9')!);
+    const disproven = semyon.spouses
+      .flatMap((s) => s.children)
+      .find((c) => c.indi.id === 'I1');
+    expect(disproven?.link?.status).toBe('DISPROVEN');
+  });
+
+  it('orders events by the model (SDATE), not by DATE', () => {
+    const tags = ivan.events.map((e) => e.tag);
+    expect(tags.indexOf('RESI')).toBeLessThan(tags.indexOf('OCCU'));
+    expect(ivan.events.find((e) => e.tag === 'RESI')?.sortDate).toBeDefined();
+  });
+
+  it('splits RESN CONFIDENTIAL and PRIVACY, but not LOCKED', () => {
+    const items = [
+      {restrictions: ['CONFIDENTIAL']},
+      {restrictions: ['PRIVACY']},
+      {restrictions: ['LOCKED']},
+      {},
+    ];
+    const hidden = splitByResn(items, (i) => i, true);
+    expect(hidden.hidden).toHaveLength(2);
+    expect(hidden.visible).toHaveLength(2);
+    expect(splitByResn(items, (i) => i, false).hidden).toHaveLength(0);
+    expect(hidingMarks(items)).toEqual(['CONFIDENTIAL', 'PRIVACY']);
+    expect(hidingMarks([{restrictions: ['LOCKED']}])).toEqual([]);
+  });
+
+  it('numbers every distinct citation once, in order of first use', () => {
+    const idx = new CitationIndex();
+    const all = ivan.events.flatMap((e) => e.citations);
+    const nums = all.map((c) => idx.add(c));
+    expect(nums).toEqual([1, 1, 2, 3, 4, 5]);
+    expect(idx.add(all[0]!)).toBe(1);
+    expect(idx.items).toHaveLength(5);
   });
 });
 

@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import type {CalendarDate, ParsedDate} from '../gedcom/types';
 import {getIntl} from '../i18n';
-import {formatAge, formatDate, initials, lifeSpan} from './format';
+import {formatAge, formatDate, formatPlace, initials, lifeSpan} from './format';
 import {mockTree} from './mock/mockTree';
 
 const cal = (
@@ -171,11 +171,60 @@ describe('helpers', () => {
   });
 
   it('formats ages with plurals', () => {
-    expect(formatAge({raw: '7y', years: 7}, getIntl('ru'))).toBe('7 лет');
-    expect(formatAge({raw: '22y', years: 22}, getIntl('ru'))).toBe('22 года');
-    expect(formatAge({raw: '1y', years: 1}, getIntl('en'))).toBe('1 year');
-    expect(formatAge({raw: '< 3m', bound: '<', months: 3}, getIntl('en'))).toBe(
-      '< 3 mo',
+    const ru = getIntl('ru');
+    const en = getIntl('en');
+    expect(formatAge({raw: '7y', years: 7}, ru)).toBe('7 лет');
+    expect(formatAge({raw: '22y', years: 22}, ru)).toBe('22 года');
+    expect(formatAge({raw: '21y', years: 21}, ru)).toBe('21 год');
+    expect(formatAge({raw: '1y', years: 1}, en)).toBe('1 year');
+  });
+
+  it('uses Russian plurals for months, weeks and days', () => {
+    const ru = getIntl('ru');
+    const age = (months: number, weeks: number, days: number) =>
+      formatAge({raw: '', months, weeks, days}, ru);
+    expect(age(1, 1, 1)).toBe('1 месяц 1 неделя 1 день');
+    expect(age(2, 3, 4)).toBe('2 месяца 3 недели 4 дня');
+    expect(age(5, 11, 12)).toBe('5 месяцев 11 недель 12 дней');
+    expect(age(21, 22, 25)).toBe('21 месяц 22 недели 25 дней');
+    expect(formatAge({raw: '', years: 0, days: 3}, ru)).toBe('0 лет 3 дня');
+  });
+
+  it('joins all parts in English', () => {
+    expect(
+      formatAge(
+        {raw: '', years: 2, months: 1, weeks: 3, days: 1},
+        getIntl('en'),
+      ),
+    ).toBe('2 years 1 month 3 weeks 1 day');
+  });
+
+  it('words the bounds and keeps the phrase', () => {
+    const ru = getIntl('ru');
+    expect(formatAge({raw: '> 7y', bound: '>', years: 7}, ru)).toBe(
+      'больше 7 лет',
     );
+    expect(formatAge({raw: '< 3m', bound: '<', months: 3}, ru)).toBe(
+      'меньше 3 месяца',
+    );
+    expect(formatAge({raw: '< 3m', bound: '<', months: 3}, getIntl('en'))).toBe(
+      'under 3 months',
+    );
+    expect(formatAge({raw: '5y', years: 5, phrase: 'около пяти'}, ru)).toBe(
+      '5 лет («около пяти»)',
+    );
+    expect(formatAge({raw: '', phrase: 'в младенчестве'}, ru)).toBe(
+      'в младенчестве',
+    );
+  });
+});
+
+describe('formatPlace', () => {
+  it('skips empty jurisdictions, never rendering ", ,"', () => {
+    const parts = ['г. Калинин', '', 'Калининская область', ' ', 'СССР'];
+    expect(formatPlace({raw: parts.join(', '), parts})).toBe(
+      'г. Калинин, Калининская область, СССР',
+    );
+    expect(formatPlace({raw: 'a, , b', parts: []})).toBe('a, b');
   });
 });

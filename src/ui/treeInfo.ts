@@ -1,5 +1,7 @@
 import type {
   CalendarDate,
+  ChildFamilyLink,
+  ChildLinkStatus,
   Citation,
   EventDetail,
   FamView,
@@ -42,13 +44,33 @@ export function listSources(tree: LoadedTree): SourceRecord[] {
 export interface ParentGroup {
   famId: string;
   pedigree?: string;
-  status?: string;
+  pedigreePhrase?: string;
+  status?: ChildLinkStatus;
+  statusPhrase?: string;
   people: IndiView[];
+  /** Partners written as @VOID@ with a phrase (no record). */
+  voids: string[];
+}
+
+export interface ChildEntry {
+  indi: IndiView;
+  /** The child's own FAMC link to this family, if present. */
+  link?: ChildFamilyLink;
+}
+
+export interface SpouseGroup {
+  famId: string;
+  spouse?: IndiView;
+  /** Phrase of a spouse without a record. */
+  phrase?: string;
+  children: ChildEntry[];
+  voidChildren: string[];
 }
 
 export interface Relatives {
   parents: ParentGroup[];
-  spouses: Array<{famId: string; spouse?: IndiView}>;
+  spouses: SpouseGroup[];
+  /** All children over all families, each once (floating card). */
   children: IndiView[];
 }
 
@@ -63,24 +85,42 @@ export function relativesOf(tree: LoadedTree, indi: IndiView): Relatives {
     parents.push({
       famId: fam.id,
       pedigree: link.pedigree,
+      pedigreePhrase: link.pedigreePhrase,
       status: link.status,
+      statusPhrase: link.statusPhrase,
       people,
+      voids: fam.partners.flatMap((p) =>
+        !p.indiId && p.phrase ? [p.phrase] : [],
+      ),
     });
   }
-  const spouses: Relatives['spouses'] = [];
+  const spouses: SpouseGroup[] = [];
   const children: IndiView[] = [];
   for (const famId of indi.fams) {
     const fam = tree.fams.get(famId);
     if (!fam) continue;
-    const other = fam.partners.find((p) => p.indiId && p.indiId !== indi.id);
-    spouses.push({
+    const other = fam.partners.find((p) => p.indiId !== indi.id && p.indiId);
+    const voidSpouse = fam.partners.find((p) => !p.indiId && p.phrase);
+    const group: SpouseGroup = {
       famId,
       spouse: other?.indiId ? tree.indis.get(other.indiId) : undefined,
-    });
+      phrase: voidSpouse?.phrase,
+      children: [],
+      voidChildren: [],
+    };
     for (const c of fam.children) {
       const child = c.indiId ? tree.indis.get(c.indiId) : undefined;
-      if (child && !children.includes(child)) children.push(child);
+      if (!child) {
+        if (c.phrase) group.voidChildren.push(c.phrase);
+        continue;
+      }
+      group.children.push({
+        indi: child,
+        link: child.famc.find((l) => l.famId === famId),
+      });
+      if (!children.includes(child)) children.push(child);
     }
+    spouses.push(group);
   }
   return {parents, spouses, children};
 }
@@ -130,8 +170,36 @@ export function cardEvents(tree: LoadedTree, indi: IndiView): CardEvent[] {
   return out;
 }
 
-export function isRestricted(e: {restrictions: string[]}): boolean {
-  return e.restrictions.some((r) => r === 'CONFIDENTIAL' || r === 'PRIVACY');
+/** RESN values that hide details when "hide restricted" is on. */
+export const HIDING_RESN = ['CONFIDENTIAL', 'PRIVACY'] as const;
+
+export function isRestricted(e: {restrictions?: readonly string[]}): boolean {
+  return !!e.restrictions?.some((r) =>
+    (HIDING_RESN as readonly string[]).includes(r),
+  );
+}
+
+/** Splits items by RESN; nothing is hidden unless `hide` is set. */
+export function splitByResn<T>(
+  items: readonly T[],
+  resn: (item: T) => {restrictions?: readonly string[]},
+  hide: boolean,
+): {visible: T[]; hidden: T[]} {
+  if (!hide) return {visible: [...items], hidden: []};
+  const visible: T[] = [];
+  const hidden: T[] = [];
+  for (const item of items)
+    (isRestricted(resn(item)) ? hidden : visible).push(item);
+  return {visible, hidden};
+}
+
+/** Distinct hiding RESN values found on the given records, in a fixed order. */
+export function hidingMarks(
+  records: ReadonlyArray<{restrictions?: readonly string[]}>,
+): string[] {
+  return HIDING_RESN.filter((m) =>
+    records.some((r) => r.restrictions?.includes(m)),
+  );
 }
 
 // -------------------------------------------------------------- citations
@@ -146,6 +214,7 @@ export class CitationIndex {
   private readonly list: NumberedCitation[] = [];
   private readonly keys = new Map<string, number>();
 
+  /** Idempotent: the same citation always gets the same number. */
   add(c: Citation): number {
     const key = `${c.sourceId ?? ''}|${c.page ?? ''}|${c.inlineText ?? ''}`;
     let n = this.keys.get(key);
@@ -162,7 +231,10 @@ export class CitationIndex {
   }
 }
 
-export function countCitations(indi: IndiView, events: EventDetail[]): number {
+export function countCitations(
+  indi: IndiView,
+  events: Array<Pick<EventDetail, 'citations'>>,
+): number {
   const idx = new CitationIndex();
   indi.citations.forEach((c) => idx.add(c));
   events.forEach((e) => e.citations.forEach((c) => idx.add(c)));
