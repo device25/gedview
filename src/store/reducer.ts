@@ -29,8 +29,10 @@ export interface AppState {
   cardExpanded: boolean;
   fullCardOpen: boolean;
   urlDialogOpen: boolean;
-  /** Chart zoom factor; applied by the chart (part C). */
+  /** Chart zoom factor; applied by the chart. */
   zoom: number;
+  /** Incremented on every "fit to screen" request. */
+  fitRequest: number;
 }
 
 export type Action =
@@ -50,7 +52,8 @@ export type Action =
   | {type: 'toggleCardExpanded'}
   | {type: 'setFullCard'; open: boolean}
   | {type: 'setUrlDialog'; open: boolean}
-  | {type: 'zoom'; mode: 'in' | 'out' | 'fit'};
+  | {type: 'zoom'; mode: 'in' | 'out' | 'fit'}
+  | {type: 'setZoom'; zoom: number};
 
 export const ZOOM_MIN = 0.25;
 export const ZOOM_MAX = 4;
@@ -73,6 +76,7 @@ export function createInitialState(
     fullCardOpen: false,
     urlDialogOpen: false,
     zoom: 1,
+    fitRequest: 0,
   };
 }
 
@@ -149,10 +153,17 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'setUrlDialog':
       return {...state, urlDialogOpen: action.open};
     case 'zoom': {
-      if (action.mode === 'fit') return {...state, zoom: 1};
+      if (action.mode === 'fit') {
+        return {...state, zoom: 1, fitRequest: state.fitRequest + 1};
+      }
       const delta = action.mode === 'in' ? ZOOM_STEP : -ZOOM_STEP;
       const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom + delta));
       return {...state, zoom};
     }
+    case 'setZoom':
+      return {
+        ...state,
+        zoom: Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, action.zoom)),
+      };
   }
 }

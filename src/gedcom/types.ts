@@ -104,6 +104,7 @@ export type DateValue =
   | {kind: 'exact'; date: CalendarDate; qualifier?: DateQualifier}
   | {
       kind: 'range';
+      /** BET has both ends; BEF sets only `to`; AFT sets only `from`. */
       type: 'BET' | 'BEF' | 'AFT';
       from?: CalendarDate;
       to?: CalendarDate;
@@ -518,4 +519,10 @@ export interface ChartProps {
   selectedId: string;
   onSelect: (indiId: string) => void;
   settings: ChartSettings;
+  /** Zoom factor (1 = 100%), owned by the app store. */
+  zoom: number;
+  /** Reports zoom changes made inside the chart (wheel, pinch). */
+  onZoomChange: (zoom: number) => void;
+  /** Incremented to ask the chart to fit the whole tree into view. */
+  fitRequest: number;
 }

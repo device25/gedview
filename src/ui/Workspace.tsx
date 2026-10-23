@@ -12,7 +12,8 @@ import './workspace.css';
 
 /** Header, chart, legend, zoom and the person card of a loaded tree. */
 export function Workspace() {
-  const {tree, view, selectedId, settings, zoom, cardOpen} = useAppState();
+  const {tree, view, selectedId, settings, zoom, fitRequest, cardOpen} =
+    useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();
   const isMobile = useIsMobile();
@@ -68,6 +69,9 @@ export function Workspace() {
           selectedId={selectedId}
           settings={settings}
           onSelect={(id) => dispatch({type: 'select', id})}
+          zoom={zoom}
+          onZoomChange={(z) => dispatch({type: 'setZoom', zoom: z})}
+          fitRequest={fitRequest}
         />
       </TabPanel>
 
