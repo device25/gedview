@@ -87,11 +87,16 @@ const about = (y: number) => exact('GREGORIAN', y, undefined, undefined, 'ABT');
 
 // ---------------------------------------------------------------- pieces
 
-const note = (text: string, mime = 'text/plain'): NoteText => ({
+const note = (
+  text: string,
+  mime = 'text/plain',
+  extra: Partial<NoteText> = {},
+): NoteText => ({
   text,
   mime,
   translations: [],
   citations: [],
+  ...extra,
 });
 
 const place = (parts: string[]): Place => ({
@@ -104,28 +109,34 @@ const place = (parts: string[]): Place => ({
 });
 
 const cite = (
-  sourceId: string,
-  quality: Quality,
+  sourceId: string | undefined,
+  quality: Quality | undefined,
   page?: string,
-  quote?: string,
+  data?: {date?: ParsedDate; texts: NoteText[]},
+  extra: Partial<Citation> = {},
 ): Citation => ({
   sourceId,
   page,
   quality,
-  data: quote ? {texts: [note(quote)]} : undefined,
+  data,
   media: [],
   notes: [],
-  node: node('SOUR', sourceId),
+  node: node('SOUR', sourceId ?? 'VOID'),
+  ...extra,
 });
+
+const quote = (text: string) => ({texts: [note(text)]});
 
 const assoc = (
   role: string,
   indiId?: string,
   phrase?: string,
+  rolePhrase?: string,
 ): Association => ({
   indiId,
   phrase,
   role,
+  rolePhrase,
   notes: [],
   citations: [],
   node: node('ASSO', indiId),
@@ -133,6 +144,7 @@ const assoc = (
 
 interface EventInit {
   date?: ParsedDate;
+  sortDate?: ParsedDate;
   place?: Place;
   value?: string;
   type?: string;
@@ -140,6 +152,7 @@ interface EventInit {
   husbandAge?: ParsedAge;
   assoc?: Association[];
   cite?: Citation[];
+  notes?: NoteText[];
   restrictions?: Restriction[];
 }
 
@@ -148,12 +161,13 @@ const ev = (tag: string, i: EventInit = {}): EventDetail => ({
   value: i.value,
   type: i.type,
   date: i.date,
+  sortDate: i.sortDate,
   place: i.place,
   age: i.age,
   husbandAge: i.husbandAge,
   associations: i.assoc ?? [],
   citations: i.cite ?? [],
-  notes: [],
+  notes: i.notes ?? [],
   media: [],
   restrictions: i.restrictions ?? [],
   uids: [],
@@ -161,6 +175,10 @@ const ev = (tag: string, i: EventInit = {}): EventDetail => ({
 });
 
 const years = (n: number): ParsedAge => ({raw: `${n}y`, years: n});
+const PERIOD_1930 = {
+  raw: 'FROM 1930',
+  value: {kind: 'period', from: calDate('GREGORIAN', 1930)},
+} as const satisfies ParsedDate;
 
 const pokrovskoye = ['с. Покровское', 'Старицкий уезд', 'Тверская губерния'];
 
@@ -262,6 +280,21 @@ const audio: MediaLink = {
   restrictions: [],
 };
 
+/** Hidden while "hide restricted" is on. */
+const privateScan: MediaLink = {
+  objectId: 'M3',
+  files: [
+    {
+      path: 'scans/personal-file.pdf',
+      mime: 'application/pdf',
+      title: 'Личное дело (скан)',
+      translations: [],
+    },
+  ],
+  title: 'Личное дело (скан)',
+  restrictions: ['PRIVACY'],
+};
+
 const exids: ExternalId[] = [
   {
     value: 'XXXX-XXX',
@@ -270,7 +303,36 @@ const exids: ExternalId[] = [
     url: 'https://www.familysearch.org/',
   },
   {value: 'A-1889/41', type: 'https://example.org/archive-id'},
+  // A registry entry with an unsafe URL must never become a link.
+  {
+    value: 'bad-1',
+    type: 'https://example.org/bad',
+    label: 'Bad link',
+    url: 'javascript:alert(1)',
+  },
 ];
+
+// A note in HTML that carries a script and an unsafe link.
+const HTML_NOTE =
+  '<p>Крестьянин, с 1930-х — <b>рабочий льнозавода</b>.<script>alert("xss")</script> ' +
+  'Фамилию <i>Соколов-Белов</i> носил до 1934 года.</p>' +
+  '<ul><li><a href="https://example.org/lnozavod">История льнозавода</a></li>' +
+  '<li><a href="javascript:alert(1)" onclick="alert(2)">Опасная ссылка</a></li></ul>';
+
+const TRAN_NOTE = note(
+  'Служил рядовым в 1915–1917 годах; демобилизован по ранению.',
+  'text/plain',
+  {
+    lang: 'ru',
+    translations: [
+      {
+        text: 'Served as a private in 1915–1917; discharged after an injury.',
+        mime: 'text/plain',
+        lang: 'en',
+      },
+    ],
+  },
+);
 
 const ivan = person({
   id: 'I1',
@@ -280,6 +342,15 @@ const ivan = person({
     famc('F1', {
       status: 'CHALLENGED',
       statusPhrase: DISPUTED_PHRASE,
+    }),
+    famc('F4', {
+      pedigree: 'ADOPTED',
+      pedigreePhrase: 'усыновлён отчимом',
+    }),
+    famc('F5', {
+      status: 'DISPROVEN',
+      statusPhrase:
+        'Семейное предание; опровергнуто записью о рождении (метрика 1889 года).',
     }),
   ],
   fams: ['F2'],
@@ -292,7 +363,9 @@ const ivan = person({
           'S1',
           3,
           'л. 12 об., запись № 41',
-          '…крестьянина Петра Ильина Соколова и законной жены его Марии Феодоровой сын Иоанн',
+          quote(
+            '…крестьянина Петра Ильина Соколова и законной жены его Марии Феодоровой сын Иоанн',
+          ),
         ),
       ],
     }),
@@ -312,6 +385,42 @@ const ivan = person({
       age: years(7),
       cite: [cite('S2', 1, 'лист 3, строка 9')],
     }),
+    ev('RESI', {
+      date: {
+        raw: 'BET 1925 AND 1928',
+        value: {
+          kind: 'range',
+          type: 'BET',
+          from: calDate('GREGORIAN', 1925),
+          to: calDate('GREGORIAN', 1928),
+        },
+      },
+      // Sorted by SDATE, not by DATE.
+      sortDate: greg(1926),
+      place: place(['д. Горки']),
+      age: {raw: '< 40y', bound: '<', years: 40},
+    }),
+    ev('OCCU', {
+      date: PERIOD_1930,
+      value: 'рабочий льнозавода',
+      cite: [
+        cite(
+          'S4',
+          2,
+          'запись № 3',
+          {
+            date: greg(1934, 6, 1),
+            texts: [
+              note(
+                '<p>Принят <b>рабочим</b> льнозавода с 1 июня 1930 года.</p>',
+                'text/html',
+              ),
+            ],
+          },
+          {notes: [note('Запись внесена со слов владельца.')]},
+        ),
+      ],
+    }),
     ev('EVEN', {
       type: 'Служебные сведения',
       value: 'Не для публикации',
@@ -319,8 +428,15 @@ const ivan = person({
     }),
     ev('DEAT', {
       date: greg(1957),
-      place: place(['г. Калинин']),
-      cite: [cite('S3', 1)],
+      place: place(['г. Калинин', '', 'Калининская область', 'СССР']),
+      age: {raw: '67y 11m 25d', years: 67, months: 11, days: 25},
+      cite: [
+        cite('S3', 1),
+        // @VOID@ source: only a page.
+        cite(undefined, 0, 'д. 17, л. 4', undefined, {
+          inlineText: 'Выписка из архивного дела',
+        }),
+      ],
     }),
   ],
   extra: {
@@ -354,22 +470,29 @@ const ivan = person({
           },
         },
         notes: [],
-        citations: [],
+        citations: [cite('S2', 1, 'лист 3, строка 10')],
       },
     ],
-    notes: [
-      note(
-        'Крестьянин, с 1930-х — рабочий льнозавода. Фамилию Соколов-Белов носил до 1934 года.',
-      ),
+    associations: [
+      assoc('FRIEND', 'I7'),
+      assoc('NGHBR', undefined, 'Фёдор Лавров, сосед по двору'),
+      assoc('OTHER', undefined, 'Анна, соседка', 'свояченица'),
     ],
-    media: [photo, audio],
+    citations: [cite('S5', 0, undefined, undefined, {})],
+    notes: [note(HTML_NOTE, 'text/html', {lang: 'ru'}), TRAN_NOTE],
+    media: [photo, audio, privateScan],
     exids,
     uids: ['0f4ae2b0-7c52-4c1d-9c7e-3b61d8a5c001'],
+    restrictions: ['LOCKED'],
     extensions: [
       {
         tag: '_RUFNAME',
         uri: 'https://example.org/ext/_RUFNAME',
         node: node('_RUFNAME', 'Иван'),
+      },
+      {
+        tag: '_LOCAL',
+        node: node('_LOCAL', 'пометка архива'),
       },
     ],
   },
@@ -424,6 +547,7 @@ const people: IndiView[] = [
     sex: 'M',
     birth: greg(1860),
     death: greg(1919),
+    fams: ['F4'],
   }),
   person({
     id: 'I8',
@@ -431,6 +555,7 @@ const people: IndiView[] = [
     sex: 'F',
     birth: greg(1866),
     death: greg(1941),
+    fams: ['F4'],
   }),
   person({
     id: 'I9',
@@ -438,7 +563,7 @@ const people: IndiView[] = [
     sex: 'M',
     birth: greg(1865),
     death: greg(1940),
-    fams: ['F3'],
+    fams: ['F3', 'F5'],
   }),
   person({
     id: 'I10',
@@ -494,6 +619,12 @@ const families: FamView[] = [
     ],
   }),
   fam('F3', 'I9', 'I10', ['I4']),
+  // Adoptive parents of Ivan (his stepfather's family).
+  fam('F4', 'I7', 'I8', ['I1']),
+  // A family legend that the records disprove.
+  fam('F5', 'I9', 'I10', ['I1'], {
+    partners: [{role: 'HUSB', indiId: 'I9'}],
+  }),
 ];
 
 // ------------------------------------------------------------------ tree
@@ -502,6 +633,8 @@ const sources: Array<[string, string]> = [
   ['S1', 'Метрическая книга Покровской церкви, 1889'],
   ['S2', 'Перепись 1897 года, переписной лист'],
   ['S3', 'Рассказ дочери, записан в 1998 году'],
+  ['S4', 'Трудовая книжка, 1934'],
+  ['S5', 'Семейное предание (оценка)'],
 ];
 
 const records: GedcomNode[] = [
@@ -532,5 +665,6 @@ export const mockTree: LoadedTree = {
   fams: new Map(families.map((f) => [f.id, f])),
   childLinkStatus: new Map([
     ['F1|I1', {status: 'CHALLENGED', phrase: DISPUTED_PHRASE}],
+    ['F5|I1', {status: 'DISPROVEN'}],
   ]),
 };

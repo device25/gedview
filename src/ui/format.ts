@@ -5,6 +5,7 @@ import type {
   IndiView,
   ParsedAge,
   ParsedDate,
+  Place,
 } from '../gedcom/types';
 import {getIntl} from '../i18n';
 import type {IntlShape} from 'react-intl';
@@ -218,18 +219,35 @@ export function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-/** "7 лет", "3 мес. 2 дн.", with bound and phrase. */
+/** "7 years", "3 months 2 days", "over 7 years"; the phrase is appended. */
 export function formatAge(age: ParsedAge, intl: IntlShape): string {
-  const parts: string[] = [];
-  if (age.years !== undefined)
-    parts.push(intl.formatMessage({id: 'age.years'}, {n: age.years}));
-  if (age.months !== undefined)
-    parts.push(intl.formatMessage({id: 'age.months'}, {n: age.months}));
-  if (age.weeks !== undefined)
-    parts.push(intl.formatMessage({id: 'age.weeks'}, {n: age.weeks}));
-  if (age.days !== undefined)
-    parts.push(intl.formatMessage({id: 'age.days'}, {n: age.days}));
-  let text = parts.join(' ');
-  if (age.bound) text = `${age.bound} ${text}`.trim();
-  return text || age.phrase || age.raw;
+  const part = (id: string, n: number | undefined) =>
+    n === undefined ? [] : [intl.formatMessage({id}, {n})];
+  let text = [
+    ...part('age.years', age.years),
+    ...part('age.months', age.months),
+    ...part('age.weeks', age.weeks),
+    ...part('age.days', age.days),
+  ].join(' ');
+  if (!text) return age.phrase || age.raw;
+  if (age.bound) {
+    text = intl.formatMessage(
+      {id: age.bound === '>' ? 'age.greater' : 'age.less'},
+      {age: text},
+    );
+  }
+  return age.phrase ? `${text} («${age.phrase}»)` : text;
+}
+
+/**
+ * Place for display. GEDCOM 7.0 keeps empty jurisdictions to stay aligned
+ * with PLAC.FORM ("Town, , Region"); they are skipped here, never shown as
+ * ", ,". The full form stays in `place.raw` / `place.parts`.
+ */
+export function formatPlace(place: Pick<Place, 'raw' | 'parts'>): string {
+  const parts = place.parts.length ? place.parts : place.raw.split(',');
+  return parts
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join(', ');
 }

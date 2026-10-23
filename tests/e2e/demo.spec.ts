@@ -28,17 +28,14 @@ test.describe('demo tree', () => {
 
     const card = page.getByRole('complementary');
     await expect(card).toContainText('6 апреля 1889 ст. ст.');
-    await expect(card.getByText('Крёстный')).toBeVisible();
+    await expect(card.getByText('Крёстный:')).toBeVisible();
     await expect(
-      card.getByRole('link', {name: 'Михаил Андреевич Белов'}),
+      card.getByRole('link', {name: 'Михаил Андреевич Белов'}).first(),
     ).toBeVisible();
-    await expect(card.getByRole('note')).toContainText(
-      'Связь с родителями спорная',
-    );
-    await expect(card.getByRole('note')).toContainText(
-      'исповедной ведомости 1890 года',
-    );
-    await expect(card).toContainText('3 источника · 1 заметка · 2 медиа');
+    const disputed = card.getByRole('note').filter({hasText: 'спорная'});
+    await expect(disputed).toContainText('Связь с родителями спорная');
+    await expect(disputed).toContainText('исповедной ведомости 1890 года');
+    await expect(card).toContainText('6 источников · 2 заметки · 2 медиа');
     await expect(page.getByRole('group', {name: 'Масштаб'})).toBeVisible();
     expect(external).toEqual([]);
   });
@@ -163,12 +160,14 @@ test.describe('demo tree', () => {
     await expect(
       dialog.getByText('Служебные сведения', {exact: true}).first(),
     ).toBeVisible();
-    await expect(dialog.getByText('1 событие скрыто')).toBeVisible();
+    await expect(
+      dialog.getByText('2 скрыто: пометка «конфиденциально» и «приватно»'),
+    ).toBeVisible();
     await expect(dialog.getByText('Не для публикации')).toBeHidden();
     await dialog.getByRole('button', {name: 'Показать', exact: true}).click();
     await expect(dialog.getByText('Не для публикации')).toBeVisible();
     // A citation link jumps to the source.
-    await dialog.getByRole('button', {name: '[2]'}).click();
+    await dialog.getByRole('link', {name: '[2]'}).first().click();
     await expect(dialog.locator('#src-2')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();

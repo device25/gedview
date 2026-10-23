@@ -1,11 +1,15 @@
+import {useState} from 'react';
 import {Button} from 'react-aria-components';
 import {useIntl} from 'react-intl';
+import type {IndiView} from '../gedcom/types';
 import {useAppState, useDispatch} from '../store';
-import {EventItem, splitRestricted} from './events';
-import {displayName, lifeSpan} from './format';
+import {EventItem} from './events';
+import {lifeSpan} from './format';
 import {Icon} from './icons';
+import {localName} from './lang';
 import {PersonLink} from './PersonLink';
-import {cardEvents, countCitations, relativesOf} from './treeInfo';
+import {HiddenNote, parentsLabel} from './relatives';
+import {cardEvents, countCitations, relativesOf, splitByResn} from './treeInfo';
 import './card.css';
 
 const SHOW_CARD_ID = 'show-card';
@@ -16,10 +20,15 @@ export function focusShowCard() {
 }
 
 export function PersonCard() {
-  const {tree, selectedId, cardOpen, cardExpanded, settings} = useAppState();
+  const {tree, selectedId, cardOpen, cardExpanded, settings, lang} =
+    useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();
+  // The person whose restricted details were revealed (this card only).
+  const [revealedFor, setRevealedFor] = useState<string>();
   const indi = selectedId ? tree?.indis.get(selectedId) : undefined;
+  // Reveal is for one person at a time: moving to anyone else hides again.
+  if (revealedFor && revealedFor !== selectedId) setRevealedFor(undefined);
   if (!tree || !indi) return null;
   const t = (id: string) => intl.formatMessage({id});
 
@@ -35,14 +44,23 @@ export function PersonCard() {
     );
   }
 
-  const name = displayName(indi);
+  const fileLang = tree.parse.language;
+  const name = localName(indi, lang, fileLang);
   const life = lifeSpan(indi, {locale: intl.locale, style: settings.dateStyle});
   const items = cardEvents(tree, indi);
-  const {visible, hidden} = splitRestricted(
-    items,
-    settings.hideRestricted,
-    false,
+  const hide = settings.hideRestricted && revealedFor !== indi.id;
+  const events = splitByResn(items, (i) => i.event, hide);
+  const media = splitByResn(indi.media, (m) => m, hide);
+  const notes = splitByResn(
+    indi.notes,
+    (n) => n as {restrictions?: readonly string[]}, // see FullCard
+    hide,
   );
+  const hiddenRecords = [
+    ...events.hidden.map((i) => i.event),
+    ...media.hidden,
+    ...notes.hidden.map((n) => n as {restrictions?: readonly string[]}),
+  ];
   const rel = relativesOf(tree, indi);
   const disputed = indi.famc.find(
     (l) => l.status === 'CHALLENGED' || l.status === 'DISPROVEN',
@@ -54,11 +72,11 @@ export function PersonCard() {
       'count.sources',
       countCitations(
         indi,
-        visible.map((v) => v.event),
+        events.visible.map((v) => v.event),
       ),
     ),
-    countPart(intl, 'count.notes', indi.notes.length),
-    countPart(intl, 'count.media', indi.media.length),
+    countPart(intl, 'count.notes', notes.visible.length),
+    countPart(intl, 'count.media', media.visible.length),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -111,14 +129,15 @@ export function PersonCard() {
       {cardExpanded && (
         <div className="card__body">
           <ol className="events">
-            {visible.map((item, i) => (
+            {events.visible.map((item, i) => (
               <EventItem key={i} tree={tree} indi={indi} item={item} />
             ))}
           </ol>
-          {hidden > 0 && (
-            <p className="muted">
-              {intl.formatMessage({id: 'card.hidden'}, {count: hidden})}
-            </p>
+          {hiddenRecords.length > 0 && (
+            <HiddenNote
+              records={hiddenRecords}
+              onReveal={() => setRevealedFor(indi.id)}
+            />
           )}
 
           {disputed && (
@@ -138,14 +157,9 @@ export function PersonCard() {
             {rel.parents.map((g) => (
               <Group
                 key={g.famId}
-                label={labelOf(
-                  intl,
-                  g.pedigree && g.pedigree !== 'BIRTH'
-                    ? `rel.parents.${g.pedigree}`
-                    : 'rel.parents',
-                  'rel.parents',
-                )}
+                label={parentsLabel(intl, g, {plainBirth: true})}
                 people={g.people}
+                disproven={g.status === 'DISPROVEN'}
               />
             ))}
             {rel.spouses.map(
@@ -188,30 +202,29 @@ export function PersonCard() {
 function Group({
   label,
   people,
+  disproven,
 }: {
   label: string;
-  people: Array<{id: string; names: Array<{display: string}>}>;
+  people: IndiView[];
+  disproven?: boolean;
 }) {
+  const {lang, tree} = useAppState();
   return (
     <div className="relatives__row">
       <dt>{label}</dt>
       <dd>
         {people.map((p) => (
-          <PersonLink key={p.id} id={p.id}>
-            {p.names[0]?.display ?? p.id}
+          <PersonLink
+            key={p.id}
+            id={p.id}
+            data-disproven={disproven || undefined}
+          >
+            {localName(p, lang, tree?.parse.language)}
           </PersonLink>
         ))}
       </dd>
     </div>
   );
-}
-
-export function labelOf(
-  intl: ReturnType<typeof useIntl>,
-  id: string,
-  fallback: string,
-): string {
-  return intl.formatMessage({id: id in intl.messages ? id : fallback});
 }
 
 function countPart(
