@@ -62,7 +62,13 @@ export function Workspace() {
         )}
       </header>
 
-      <TabPanel id={view} className={cardOpen ? 'chart chart--card' : 'chart'}>
+      {/* The key gives each view its own panel (and so its own DOM id, which
+          the tab points to with aria-controls) and a fresh chart. */}
+      <TabPanel
+        key={view}
+        id={view}
+        className={cardOpen ? 'chart chart--card' : 'chart'}
+      >
         <ChartView
           tree={tree}
           view={view as View}

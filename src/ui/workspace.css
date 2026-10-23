@@ -83,8 +83,8 @@
 .chart {
   flex: 1;
   min-height: 0;
-  padding: 24px 24px 72px 40px;
-  overflow: auto;
+  padding: 0 0 72px;
+  overflow: hidden;
   outline: none;
 }
 
@@ -178,7 +178,7 @@
 
   .chart,
   .chart--card {
-    padding: 8px 16px 360px;
+    padding: 0 0 360px;
   }
 
   .legend,

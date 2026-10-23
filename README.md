@@ -60,7 +60,10 @@ CI workflow manually with `update_snapshots` enabled and commit the
 - Theme (light, dark, system), language and chart settings are stored in
   `localStorage`; the URL hash holds only the chart view and the selected
   person id (`#view=hourglass&id=I1`).
-- Keys: `/` — find a person, `Esc` — close a panel or the card.
+- Keys: `/` — find a person, `Esc` — close a panel or the card. On the
+  chart: arrows move between relatives (Up/Down parents and children,
+  Left/Right spouse and siblings), `Enter` or `Space` selects; the mouse
+  wheel or a pinch zooms, dragging pans.
 
 ## Deploy
 

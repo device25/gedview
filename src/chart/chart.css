@@ -1,96 +1,227 @@
-/* Placeholder styles; part C replaces the chart and this file. */
-.chart-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* The chart (topola + d3-zoom). Colors come from tokens.css, so a theme
+   change needs no redraw. */
+.gv-chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* Cut at the edges of the area (the header, the rail), but let the chart
+     run on under the person card, which is laid over the area's padding. */
+  clip-path: inset(0);
 }
 
-.person-box {
-  position: relative;
+.chart--card .gv-chart {
+  clip-path: inset(0 -408px 0 0);
+}
+
+.gv-svg {
   display: block;
   width: 100%;
-  min-height: 72px;
-  padding: 10px 12px;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  background: var(--card);
-  color: var(--text);
-  text-align: left;
+  height: 100%;
+  overflow: visible;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gv-svg:active {
+  cursor: grabbing;
+}
+
+.gv-inner {
+  overflow: visible;
+}
+
+/* ------------------------------------------------------------ links */
+.gv-svg .link {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5px;
+}
+
+.gv-svg .link[data-look='dashed'] {
+  stroke: var(--warn-line);
+  stroke-width: 2px;
+  stroke-dasharray: 6 4;
+}
+
+.gv-svg .link[data-look='dotted'] {
+  stroke-width: 2px;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+}
+
+.gv-svg [data-look='hidden'] {
+  display: none;
+}
+
+.gv-union {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5px;
+}
+
+/* ------------------------------------------------------------ boxes */
+.gv-person {
   cursor: pointer;
-  box-shadow: 0 1px 2px var(--shadow);
+  outline: none;
 }
 
-.person-box[aria-current='true'] {
-  box-shadow: 0 0 0 2px var(--sel-ring);
+.gv-card {
+  fill: var(--card);
 }
 
-.person-box[data-dashed] {
-  border-style: dashed;
-  border-color: var(--warn-line);
+.gv-ring,
+.gv-focus {
+  display: none;
+  fill: none;
 }
 
-.person-box__name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  line-height: 1.25;
+.gv-ring {
+  stroke: var(--sel-ring);
+  stroke-width: 2px;
 }
 
-.person-box__dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--line);
+.gv-focus {
+  stroke: var(--accent);
+  stroke-width: 3px;
 }
 
-.person-box__dot[data-sex='M'] {
-  background: var(--male);
+.gv-selected .gv-ring,
+.gv-person:focus-visible .gv-focus {
+  display: inline;
 }
 
-.person-box__dot[data-sex='F'] {
-  background: var(--female);
+.gv-dot {
+  fill: var(--line);
 }
 
-.person-box__life {
-  display: block;
-  margin: 4px 0 0 16px;
-  font-size: 12px;
-  color: var(--text-2);
+.gv-dot.gv-M {
+  fill: var(--male);
 }
 
-.person-box__id {
+.gv-dot.gv-F {
+  fill: var(--female);
+}
+
+.gv-name {
+  font: 500 14px var(--font);
+  fill: var(--text);
+}
+
+.gv-life {
+  font: 400 12px var(--font);
+  fill: var(--text-2);
+}
+
+.gv-id {
+  font: 400 11px var(--font);
+  fill: var(--text-2);
+}
+
+/* Zoomed far out the names are unreadable; skip drawing them. */
+.gv-far .gv-name,
+.gv-far .gv-life,
+.gv-far .gv-id {
+  display: none;
+}
+
+/* The «disputed» label on a link. */
+.gv-pill {
+  cursor: help;
+}
+
+.gv-pill rect {
+  fill: var(--warn-bg);
+}
+
+.gv-pill text {
+  font: 500 12px var(--font);
+  fill: var(--warn-text);
+}
+
+.gv-tip {
   position: absolute;
-  top: 8px;
-  right: 10px;
-  font-size: 11px;
-  color: var(--text-2);
+  z-index: 3;
+  max-width: 280px;
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  background: var(--card);
+  box-shadow: 0 6px 24px var(--shadow);
+  font-size: 13px;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
-.person-box__badge {
-  position: absolute;
-  right: 10px;
-  bottom: 8px;
-  padding: 0 8px;
-  border-radius: 10px;
-  background: var(--warn-bg);
-  color: var(--warn-text);
-  font-size: 11px;
-  font-weight: 500;
+/* -------------------------------------------------------- fan chart
+   Topola paints the fan chart with fixed colors; these follow the theme. */
+.gv-chart {
+  --gv-sky: #dcebf2;
+  --gv-grass: #b9cfa0;
+  --gv-leaf: #8fae7a;
+  --gv-leaf-glow: #a9c692;
+  --gv-wood: #7a5a3c;
 }
 
-.chart-placeholder__more {
-  margin: 16px 0 0;
-  color: var(--text-2);
-}
-
-@media (max-width: 767px) {
-  .chart-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .gv-chart {
+    --gv-sky: #1a252b;
+    --gv-grass: #213022;
+    --gv-leaf: #2f4a33;
+    --gv-leaf-glow: #3a5a3e;
+    --gv-wood: #9a7a58;
   }
+}
+
+:root[data-theme='dark'] .gv-chart {
+  --gv-sky: #1a252b;
+  --gv-grass: #213022;
+  --gv-leaf: #2f4a33;
+  --gv-leaf-glow: #3a5a3e;
+  --gv-wood: #9a7a58;
+}
+
+.gv-svg .fancy-bg:first-of-type {
+  fill: var(--gv-sky);
+}
+
+.gv-svg .fancy-bg:not(:first-of-type) {
+  fill: var(--gv-grass);
+}
+
+.gv-svg circle.background {
+  fill: var(--gv-leaf) !important;
+}
+
+.gv-svg .background2 circle.background {
+  fill: url('#gradient') !important;
+}
+
+.gv-svg #gradient stop {
+  stop-color: var(--gv-leaf-glow);
+}
+
+.gv-svg .branch,
+.gv-svg .trunk path {
+  fill: var(--gv-wood);
+  stroke: var(--gv-wood);
+}
+
+.gv-svg .branch.additional-marriage {
+  fill: none;
+}
+
+.gv-svg .branch[data-look='dashed'] {
+  fill: color-mix(in srgb, var(--warn-line) 40%, transparent);
+  stroke: var(--warn-line);
+  stroke-width: 2px;
+  stroke-dasharray: 6 4;
+}
+
+.gv-svg .branch[data-look='dotted'] {
+  fill: color-mix(in srgb, var(--line) 40%, transparent);
+  stroke: var(--line);
+  stroke-width: 2px;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
 }
