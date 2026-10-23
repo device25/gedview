@@ -1,3 +1,4 @@
+import {MAP_ENABLED} from '../features';
 import {
   GENERATIONS_MAX,
   isLevel,
@@ -38,7 +39,7 @@ export function parseHash(hash: string): HashState {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const out: HashState = {};
   const mode = params.get('mode');
-  if (mode === 'summary' || mode === 'map') out.mode = mode;
+  if (mode === 'summary' || (mode === 'map' && MAP_ENABLED)) out.mode = mode;
   const map = params.get('map');
   if (map === 'path' || map === 'spread') out.map = map;
   const id = params.get('id');

@@ -1,4 +1,5 @@
 import {expect, test, type Page} from '@playwright/test';
+import {MAP_ENABLED} from '../../src/features';
 import {expectNoAxeViolations, openDemo, trackExternal} from './helpers';
 
 const svg = (page: Page) => page.locator('svg.gv-map-svg');
@@ -12,7 +13,21 @@ async function openMap(page: Page, view = '') {
   await expect(page.locator('path.gv-map-land')).toHaveCount(1);
 }
 
+test.describe('while the map is hidden', () => {
+  test.skip(MAP_ENABLED, 'the map is shown');
+
+  test('no «Карта» button, and a map link opens the chart', async ({page}) => {
+    await openDemo(page);
+    await expect(page.getByRole('button', {name: 'Карта'})).toHaveCount(0);
+    await page.goto('/?demo#mode=map&id=I1');
+    await expect(page.locator('g.gv-person[data-id="I1"]')).toBeVisible();
+    await expect(page.locator('svg.gv-map-svg')).toHaveCount(0);
+  });
+});
+
 test.describe('map', () => {
+  test.skip(!MAP_ENABLED, 'the map is hidden until it is reviewed again');
+
   test('the rail opens «Карта»; the URL keeps it', async ({page}) => {
     await openDemo(page);
     await page.getByRole('button', {name: 'Карта'}).click();
