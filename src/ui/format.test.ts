@@ -169,11 +169,11 @@ describe('lifeSpan', () => {
       events: ivan.events.filter((e) => pred(e.tag)),
     });
     const bornOnly = keep((t) => t === 'BIRT');
-    expect(lifeSpan(bornOnly, ru)).toBe('род. 6 апр 1889 ст. ст.');
-    expect(lifeSpan(bornOnly, en)).toBe('b. 6 Apr 1889 O.S.');
+    expect(lifeSpan(bornOnly, ru)).toBe('6 апр 1889 ст. ст.');
+    expect(lifeSpan(bornOnly, en)).toBe('6 Apr 1889 O.S.');
     const diedOnly = keep((t) => t === 'DEAT');
-    expect(lifeSpan(diedOnly, ru)).toBe('ум. 1957');
-    expect(lifeSpan(diedOnly, en)).toBe('d. 1957');
+    expect(lifeSpan(diedOnly, ru)).toBe('? — 1957');
+    expect(lifeSpan(diedOnly, en)).toBe('? — 1957');
     const deathUndated = {
       ...bornOnly,
       events: [
