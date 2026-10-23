@@ -1,9 +1,16 @@
-/** Placeholder shell; replaced by the UI skeleton (part B). */
+import {StoreProvider} from './store';
+import {IntlRoot} from './ui/IntlRoot';
+import {LoaderProvider} from './ui/loader';
+import {Shell} from './ui/Shell';
+
 export function App() {
   return (
-    <main className="placeholder">
-      <h1>Gedview</h1>
-      <p>Просмотр родословных в формате GEDCOM 7.0.</p>
-    </main>
+    <StoreProvider>
+      <IntlRoot>
+        <LoaderProvider>
+          <Shell />
+        </LoaderProvider>
+      </IntlRoot>
+    </StoreProvider>
   );
 }

@@ -1,0 +1,241 @@
+import {useMemo, useState} from 'react';
+import {
+  Autocomplete,
+  Button,
+  Input,
+  ListBox,
+  ListBoxItem,
+  Radio,
+  RadioGroup,
+  SearchField,
+} from 'react-aria-components';
+import {useIntl} from 'react-intl';
+import type {ChartSettings} from '../gedcom/types';
+import {languages} from '../i18n';
+import {useAppState, useDispatch} from '../store';
+import type {ThemePref} from '../store/persist';
+import {CheckField, SelectField} from './controls';
+import {FileActions} from './FileActions';
+import {Icon} from './icons';
+import {buildIndex, searchPeople} from './search';
+import {listSources} from './treeInfo';
+
+export function PeoplePanel() {
+  const {tree, lang, settings, selectedId} = useAppState();
+  const dispatch = useDispatch();
+  const intl = useIntl();
+  const [query, setQuery] = useState('');
+  const index = useMemo(
+    () =>
+      tree ? buildIndex(tree, {locale: lang, style: settings.dateStyle}) : [],
+    [tree, lang, settings.dateStyle],
+  );
+  const results = useMemo(() => searchPeople(index, query, 50), [index, query]);
+
+  return (
+    <Autocomplete inputValue={query} onInputChange={setQuery}>
+      <SearchField
+        className="search"
+        aria-label={intl.formatMessage({id: 'people.search'})}
+        autoFocus
+      >
+        <Input
+          className="search__input"
+          placeholder={intl.formatMessage({id: 'people.searchPlaceholder'})}
+        />
+        <Button
+          className="search__clear"
+          aria-label={intl.formatMessage({id: 'people.clear'})}
+        >
+          <Icon name="close" size={14} strokeWidth={2.2} />
+        </Button>
+      </SearchField>
+      <ListBox
+        className="results"
+        aria-label={intl.formatMessage({id: 'people.results'})}
+        items={results}
+        selectionMode="none"
+        onAction={(key) => dispatch({type: 'select', id: String(key)})}
+        renderEmptyState={() => (
+          <p className="empty">{intl.formatMessage({id: 'people.empty'})}</p>
+        )}
+      >
+        {(r) => (
+          <ListBoxItem
+            id={r.id}
+            textValue={r.name}
+            className="results__item"
+            data-current={r.id === selectedId || undefined}
+          >
+            <span className="results__name">{r.name}</span>
+            <span className="results__life">{r.life}</span>
+          </ListBoxItem>
+        )}
+      </ListBox>
+    </Autocomplete>
+  );
+}
+
+export function SourcesPanel() {
+  const {tree} = useAppState();
+  const intl = useIntl();
+  const sources = useMemo(() => (tree ? listSources(tree) : []), [tree]);
+  if (!sources.length) {
+    return <p className="empty">{intl.formatMessage({id: 'sources.empty'})}</p>;
+  }
+  return (
+    <ul
+      className="source-list"
+      aria-label={intl.formatMessage({id: 'sources.title'})}
+    >
+      {sources.map((s) => (
+        <li key={s.id}>
+          <span>{s.title}</span>
+          <span className="source-list__id">{s.id}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ExportPanel() {
+  const intl = useIntl();
+  return (
+    <>
+      <div className="export-grid">
+        {['PNG', 'SVG', 'PDF'].map((f) => (
+          <Button key={f} className="btn btn--block" isDisabled>
+            {f}
+          </Button>
+        ))}
+        <Button className="btn btn--block" isDisabled>
+          {intl.formatMessage({id: 'export.print'})}
+        </Button>
+      </div>
+      {/* TODO(part C): enable together with the chart. */}
+      <p className="hint">{intl.formatMessage({id: 'export.soon'})}</p>
+    </>
+  );
+}
+
+export function LanguagePanel({onPicked}: {onPicked?: () => void}) {
+  const {lang} = useAppState();
+  const dispatch = useDispatch();
+  const intl = useIntl();
+  return (
+    <>
+      <RadioGroup
+        className="radios"
+        aria-label={intl.formatMessage({id: 'lang.title'})}
+        value={lang}
+        onChange={(code) => {
+          dispatch({type: 'setLang', lang: code});
+          onPicked?.();
+        }}
+      >
+        {languages.map((l) => (
+          <Radio key={l.code} value={l.code} className="radio">
+            <span className="radio__dot" aria-hidden="true" />
+            <span lang={l.code} className="radio__name">
+              {l.name}
+            </span>
+            {l.coverage < 1 && (
+              <span className="radio__note">
+                {intl.formatMessage({id: 'lang.partial'})}
+              </span>
+            )}
+          </Radio>
+        ))}
+      </RadioGroup>
+      <p className="hint">{intl.formatMessage({id: 'lang.hint'})}</p>
+    </>
+  );
+}
+
+export function SettingsPanel({mobileExtras}: {mobileExtras?: boolean}) {
+  const {settings, theme, tree} = useAppState();
+  const dispatch = useDispatch();
+  const intl = useIntl();
+  const t = (id: string) => intl.formatMessage({id});
+  const set = (patch: Partial<ChartSettings>) =>
+    dispatch({type: 'setSettings', patch});
+
+  return (
+    <div className="settings">
+      <CheckField
+        isSelected={settings.sexColors}
+        onChange={(v) => set({sexColors: v})}
+      >
+        {t('settings.sexColors')}
+      </CheckField>
+      <CheckField
+        isSelected={settings.showIds}
+        onChange={(v) => set({showIds: v})}
+      >
+        {t('settings.ids')}
+      </CheckField>
+      <CheckField
+        isSelected={settings.dashChallenged}
+        onChange={(v) => set({dashChallenged: v})}
+      >
+        {t('settings.challenged')}
+      </CheckField>
+      <CheckField
+        isSelected={settings.hideRestricted}
+        onChange={(v) => set({hideRestricted: v})}
+      >
+        {t('settings.hideRestricted')}
+      </CheckField>
+      <SelectField
+        label={t('settings.disproven')}
+        value={settings.disproven}
+        onChange={(v) => set({disproven: v})}
+        options={[
+          {id: 'hide', label: t('settings.hide')},
+          {id: 'dotted', label: t('settings.dotted')},
+        ]}
+      />
+      <SelectField
+        label={t('settings.dates')}
+        value={settings.dateStyle}
+        onChange={(v) => set({dateStyle: v})}
+        options={[
+          {id: 'source', label: t('settings.datesSource')},
+          {id: 'both', label: t('settings.datesBoth')},
+          {id: 'gregorian', label: t('settings.datesGregorian')},
+        ]}
+      />
+      <SelectField<ThemePref>
+        label={t('settings.theme')}
+        value={theme}
+        onChange={(v) => dispatch({type: 'setTheme', theme: v})}
+        options={[
+          {id: 'system', label: t('theme.system')},
+          {id: 'light', label: t('theme.light')},
+          {id: 'dark', label: t('theme.dark')},
+        ]}
+      />
+      {mobileExtras && (
+        <>
+          <section className="settings__group" aria-labelledby="mx-lang">
+            <h3 id="mx-lang">{t('lang.title')}</h3>
+            <LanguagePanel />
+          </section>
+          <section className="settings__group" aria-labelledby="mx-file">
+            <h3 id="mx-file">{t('file.title')}</h3>
+            <FileActions
+              variant="stack"
+              onDone={() => dispatch({type: 'closeFlyout'})}
+            />
+          </section>
+          {tree && (
+            <section className="settings__group" aria-labelledby="mx-export">
+              <h3 id="mx-export">{t('export.title')}</h3>
+              <ExportPanel />
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
