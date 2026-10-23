@@ -28,6 +28,16 @@ export interface LanguageInfo {
   coverage: number;
 }
 
+/** Design order: Russian, English, then the others by code. */
+const FIRST = ['ru', 'en'];
+function byDesignOrder(a: {code: string}, b: {code: string}): number {
+  const rank = (code: string) => {
+    const i = FIRST.indexOf(code);
+    return i < 0 ? FIRST.length : i;
+  };
+  return rank(a.code) - rank(b.code) || a.code.localeCompare(b.code);
+}
+
 export const languages: LanguageInfo[] = Object.entries(byCode)
   .map(([code, messages]) => {
     const keys = Object.keys(fallback);
@@ -39,7 +49,7 @@ export const languages: LanguageInfo[] = Object.entries(byCode)
       coverage: keys.length ? done / keys.length : 1,
     };
   })
-  .sort((a, b) => a.code.localeCompare(b.code));
+  .sort(byDesignOrder);
 
 export const availableCodes = languages.map((l) => l.code);
 
