@@ -1,7 +1,9 @@
+import {useMemo} from 'react';
 import {Button} from 'react-aria-components';
 import {useIntl} from 'react-intl';
 import {ChartView} from '../chart/ChartView';
 import {useAppState, useDispatch, useIsMobile} from '../store';
+import {decadeScale} from '../model/decades';
 import {chartScope} from '../store/reducer';
 import {FileActions} from './FileActions';
 import {Icon} from './icons';
@@ -20,6 +22,13 @@ export function Workspace() {
   const intl = useIntl();
   const isMobile = useIsMobile();
   const scope = chartScope(state);
+  const decades = useMemo(
+    () =>
+      tree && settings.cardColor === 'decade'
+        ? decadeScale(tree, settings)
+        : undefined,
+    [tree, settings],
+  );
   if (!tree || !selectedId || !scope) return null;
   const summary = state.mode === 'summary';
   const map = state.mode === 'map';
@@ -123,6 +132,26 @@ export function Workspace() {
               </svg>
               {t('legend.copies')}
             </span>
+            {decades && (
+              <span className="legend__item">
+                <span className="legend__decades" aria-hidden="true" />
+                {intl.formatMessage(
+                  {id: 'legend.decades'},
+                  {
+                    first: intl.formatMessage(
+                      {id: 'legend.decade'},
+                      {decade: decades.first},
+                    ),
+                    last: intl.formatMessage(
+                      {id: 'legend.decade'},
+                      {decade: decades.last},
+                    ),
+                  },
+                )}
+                {'; '}
+                {t('legend.decadesUnknown')}
+              </span>
+            )}
             <span>{t('legend.julian')}</span>
             <span className="legend__keys">{t('legend.keys')}</span>
           </div>

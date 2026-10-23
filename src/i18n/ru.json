@@ -443,5 +443,11 @@
   "map.spread.born": "Родились здесь",
   "map.none.title": "У мест в этом файле нет координат",
   "map.none.text": "Gedview показывает места по координатам из файла и ничего не ищет в интернете. Добавьте широту и долготу местам в программе, где ведётся дерево, и откройте файл снова.",
-  "map.none.places": "Места в файле: {n}"
+  "map.none.places": "Места в файле: {n}",
+  "settings.cardColor": "Цвет карточек",
+  "settings.cardColor.none": "Без цвета",
+  "settings.cardColor.decade": "По десятилетию рождения",
+  "legend.decades": "Цвет карточки — десятилетие рождения, от {first} до {last}",
+  "legend.decadesUnknown": "белые — год неизвестен",
+  "legend.decade": "{decade}-х"
 }

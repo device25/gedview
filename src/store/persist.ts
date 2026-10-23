@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   hideRestricted: true,
   // Off: a remote image tells another site who is looking (see the hint).
   loadRemoteMedia: false,
+  cardColor: 'none',
 };
 
 const KEYS = {
@@ -54,6 +55,8 @@ export function sanitizeSettings(raw: unknown): ChartSettings {
   }
   if (r.disproven === 'hide' || r.disproven === 'dotted')
     s.disproven = r.disproven;
+  if (r.cardColor === 'none' || r.cardColor === 'decade')
+    s.cardColor = r.cardColor;
   if (
     r.dateStyle === 'source' ||
     r.dateStyle === 'both' ||

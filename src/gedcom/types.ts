@@ -513,6 +513,8 @@ export interface ChartSettings {
   hideRestricted: boolean;
   /** Load http(s) media referenced by the file (contacts that host). */
   loadRemoteMedia: boolean;
+  /** Colour of the cards: plain, or by decade of birth. */
+  cardColor: 'none' | 'decade';
 }
 
 /** Props of the chart component (part C). */

@@ -18,6 +18,12 @@ import {displayName, initials, lifeSpan} from '../ui/format';
 import {familyBox, marriageOrder} from './family';
 import {cropBox, photoOf, type Photo} from './photo';
 import {wrapName, type Measure} from './text';
+import {
+  birthYear,
+  decadeFill,
+  decadeScale,
+  type DecadeScale,
+} from '../model/decades';
 
 export const BOX_W = 176;
 export const BOX_H = 128;
@@ -94,11 +100,26 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
   /** The nodes drawn by the last render (exiting nodes are not in it). */
   nodes: Array<HierarchyPointNode<TreeNode>> = [];
 
+  /** The decade scale of the whole file, when cards are coloured by it. */
+  private readonly decades: DecadeScale | undefined;
+
   constructor(
     options: RendererOptions<IndiDetails, FamDetails>,
     private readonly ctx: RendererContext,
   ) {
     super(options);
+    this.decades =
+      ctx.settings.cardColor === 'decade'
+        ? decadeScale(ctx.tree, ctx.settings)
+        : undefined;
+  }
+
+  /** The card's fill by decade of birth; none = the plain card. */
+  private fillOf(id: string): string | null {
+    const indi = this.ctx.tree.indis.get(id);
+    if (!this.decades || !indi) return null;
+    const year = birthYear(indi, this.ctx.settings);
+    return year === undefined ? null : decadeFill(year, this.decades);
   }
 
   private look(id: string): PersonLook {
@@ -195,7 +216,8 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       .attr('class', 'gv-card')
       .attr('width', BOX_W)
       .attr('height', BOX_H)
-      .attr('rx', 14);
+      .attr('rx', 14)
+      .style('fill', () => this.fillOf(id));
 
     const photo = photoOf(this.ctx.tree.indis.get(id), this.ctx.tree, {
       allowRemote: settings.loadRemoteMedia,

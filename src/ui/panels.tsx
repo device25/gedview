@@ -263,6 +263,15 @@ export function SettingsPanel({mobileExtras}: {mobileExtras?: boolean}) {
         {t('settings.loadRemoteMedia')}
       </CheckField>
       <SelectField
+        label={t('settings.cardColor')}
+        value={settings.cardColor}
+        onChange={(v) => set({cardColor: v})}
+        options={[
+          {id: 'none', label: t('settings.cardColor.none')},
+          {id: 'decade', label: t('settings.cardColor.decade')},
+        ]}
+      />
+      <SelectField
         label={t('settings.disproven')}
         value={settings.disproven}
         onChange={(v) => set({disproven: v})}

@@ -36,4 +36,5 @@ export const SETTINGS: ChartSettings = {
   dateStyle: 'source',
   hideRestricted: false,
   loadRemoteMedia: true,
+  cardColor: 'none',
 };
