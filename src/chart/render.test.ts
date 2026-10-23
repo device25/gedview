@@ -34,7 +34,10 @@ describe('person boxes', () => {
     expect(ivan.getAttribute('aria-label')).toMatch(
       /^Иван Петрович Соколов, 6\s(\(18\)\s)?апреля 1889\s—\s1957$/,
     );
-    expect(ivan.querySelector('.gv-dot.gv-M')).not.toBeNull();
+    // Sex is the colour of the portrait's ring, drawn beside the button.
+    expect(
+      d.svg.querySelector('.gv-photo[data-for="I1"] .gv-photo-ring.gv-M'),
+    ).not.toBeNull();
     const ids = [...d.svg.querySelectorAll('g.gv-person')].map((g) =>
       g.getAttribute('data-id'),
     );
@@ -49,10 +52,10 @@ describe('person boxes', () => {
       showIds: true,
       sexColors: false,
     });
-    expect(d.svg.querySelector('g[data-id="I1"] .gv-id')?.textContent).toBe(
+    expect(d.svg.querySelector('.gv-id[data-for="I1"]')?.textContent).toBe(
       'I1',
     );
-    expect(d.svg.querySelector('.gv-dot.gv-M')).toBeNull();
+    expect(d.svg.querySelector('.gv-photo-ring.gv-M')).toBeNull();
   });
 });
 

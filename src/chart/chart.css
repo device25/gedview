@@ -92,18 +92,6 @@
   display: inline;
 }
 
-.gv-dot {
-  fill: var(--line);
-}
-
-.gv-dot.gv-M {
-  fill: var(--male);
-}
-
-.gv-dot.gv-F {
-  fill: var(--female);
-}
-
 .gv-photo {
   pointer-events: none;
 }
