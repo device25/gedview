@@ -18,21 +18,19 @@ import {displayName, initials, lifeSpan} from '../ui/format';
 import {cropBox, photoOf, type Photo} from './photo';
 import {wrapName, type Measure} from './text';
 
-export const BOX_W = 220;
-export const BOX_H = 72;
+export const BOX_W = 176;
+export const BOX_H = 128;
 /** Space between the two boxes of a couple (and half of it around a box). */
 export const COUPLE_GAP = 24;
 /** Extra height under a row of boxes: room for the link and its label. */
 export const FAMILY_H = 32;
 
-const PAD_LEFT = 14;
-const NAME_X = 30; // after the dot
-const PHOTO = 36; // portrait diameter
-const NAME_X_PHOTO = PAD_LEFT + PHOTO + 10;
-const NAME_RIGHT = 14;
-const NAME_LINE = 17.5;
-/** Life dates are set at 12px regular; `measure` is the 14px medium name font. */
-const LIFE_SCALE = 0.84;
+const PAD = 14;
+const PHOTO = 40; // portrait (or initials) diameter, top left
+const NAME_TOP = PAD + PHOTO + 10 + 14; // baseline of the first name line
+const NAME_LINE = 18.5;
+/** Life dates are set at 13px regular; `measure` is the 15px medium name font. */
+const LIFE_SCALE = 0.85;
 
 export interface RendererContext {
   tree: LoadedTree;
@@ -190,10 +188,29 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       allowRemote: settings.loadRemoteMedia,
       hideRestricted: settings.hideRestricted,
     });
-    const textX = photo ? NAME_X_PHOTO : NAME_X;
-    const idWidth = settings.showIds ? this.ctx.measure(id) + 10 : 0;
-    const maxText = BOX_W - textX - NAME_RIGHT - idWidth;
+    const sexClass = settings.sexColors && look.sex ? ` gv-${look.sex}` : '';
+    // Drawn beside the button, not inside it: the initials are not part of
+    // the accessible name, and clicks go through to the card underneath.
+    this.portrait(parent, x + inset, id, photo, look.name, sexClass);
+    if (settings.showIds) {
+      g.append('text')
+        .attr('class', 'gv-id')
+        .attr('x', BOX_W - 12)
+        .attr('y', PAD + 12)
+        .attr('text-anchor', 'end')
+        .text(id);
+    }
+
+    // Name and dates under the portrait, across the whole width.
+    const maxText = BOX_W - 2 * PAD;
     const lines = wrapName(look.name, maxText, this.ctx.measure);
+    lines.forEach((line, i) => {
+      g.append('text')
+        .attr('class', 'gv-name')
+        .attr('x', PAD)
+        .attr('y', NAME_TOP + i * NAME_LINE)
+        .text(`${line} `);
+    });
     // Full dates when they fit, else the years only (never abbreviated); the
     // accessible name keeps the full dates.
     const indi = this.ctx.tree.indis.get(id);
@@ -201,54 +218,39 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       look.life && indi && this.ctx.measure(look.life) * LIFE_SCALE > maxText
         ? lifeOf(indi, this.ctx, true)
         : look.life;
-    const block = lines.length * NAME_LINE + (life ? 4 + 15 : 0);
-    const top = (BOX_H - block) / 2;
-    const nameBase = top + 13;
-
-    const sexClass = settings.sexColors && look.sex ? ` gv-${look.sex}` : '';
-    if (photo) {
-      this.portrait(g, photo, look.name, sexClass);
-    } else {
-      g.append('circle')
-        .attr('class', `gv-dot${sexClass}`)
-        .attr('cx', PAD_LEFT + 4)
-        .attr('cy', top + NAME_LINE / 2)
-        .attr('r', 4);
+    // The accessible name matches what is shown; the full dates, when only
+    // the years fit, go to the description.
+    if (life !== look.life) {
+      g.attr('aria-label', life ? `${look.name}, ${life}` : look.name);
+      g.attr('aria-description', look.life);
     }
-    lines.forEach((line, i) => {
-      g.append('text')
-        .attr('class', 'gv-name')
-        .attr('x', textX)
-        .attr('y', nameBase + i * NAME_LINE)
-        .text(`${line} `);
-    });
     if (life) {
       g.append('text')
         .attr('class', 'gv-life')
-        .attr('x', textX)
-        .attr('y', top + lines.length * NAME_LINE + 4 + 11)
+        .attr('x', PAD)
+        .attr('y', NAME_TOP + (lines.length - 1) * NAME_LINE + 3 + 16)
         .text(` ${life}`);
-    }
-    if (settings.showIds) {
-      g.append('text')
-        .attr('class', 'gv-id')
-        .attr('x', BOX_W - 10)
-        .attr('y', 19)
-        .attr('text-anchor', 'end')
-        .text(id);
     }
   }
 
-  /** A round portrait at the left of the box; the initials stay underneath
-   *  and show when the image cannot be loaded. Decorative: the box's
-   *  accessible name already says who it is. */
-  private portrait(g: Group, photo: Photo, name: string, sexClass: string) {
+  /** A round portrait at the top left of the box: the photo over the
+   *  initials, which show when there is no photo or it cannot be loaded.
+   *  Decorative: the box's accessible name already says who it is. */
+  private portrait(
+    parent: Group,
+    x: number,
+    id: string,
+    photo: Photo | undefined,
+    name: string,
+    sexClass: string,
+  ) {
     const r = PHOTO / 2;
-    const p = g
+    const p = parent
       .append('g')
       .attr('class', 'gv-photo')
+      .attr('data-for', id)
       .attr('aria-hidden', 'true')
-      .attr('transform', `translate(${PAD_LEFT} ${(BOX_H - PHOTO) / 2})`);
+      .attr('transform', `translate(${x + PAD} ${PAD})`);
     p.append('circle')
       .attr('class', 'gv-photo-bg')
       .attr('cx', r)
@@ -257,9 +259,18 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     p.append('text')
       .attr('class', 'gv-initials')
       .attr('x', r)
-      .attr('y', r + 4.5)
+      .attr('y', r + 5)
       .attr('text-anchor', 'middle')
       .text(initials(name));
+    if (photo) this.photoFrame(p, photo);
+    p.append('circle')
+      .attr('class', `gv-photo-ring${sexClass}`)
+      .attr('cx', r)
+      .attr('cy', r)
+      .attr('r', r - 1);
+  }
+
+  private photoFrame(p: Group, photo: Photo) {
     const frame = p
       .append('svg')
       .attr('class', 'gv-photo-frame')
@@ -288,10 +299,5 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       image.attr('width', PHOTO).attr('height', PHOTO);
     }
     image.on('error', () => frame.remove());
-    p.append('circle')
-      .attr('class', `gv-photo-ring${sexClass}`)
-      .attr('cx', r)
-      .attr('cy', r)
-      .attr('r', r - 1);
   }
 }

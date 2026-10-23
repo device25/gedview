@@ -77,11 +77,11 @@ export const prefersReducedMotion = () =>
 /** Resolves when the box font is usable (or after a short wait). */
 function fontReady(): Promise<void> {
   const fonts = typeof document === 'undefined' ? undefined : document.fonts;
-  if (!fonts || fonts.check(`500 14px Onest`, FONT_SAMPLE)) {
+  if (!fonts || fonts.check(`500 15px Onest`, FONT_SAMPLE)) {
     return Promise.resolve();
   }
   return Promise.race([
-    fonts.load(`500 14px Onest`, FONT_SAMPLE),
+    fonts.load(`500 15px Onest`, FONT_SAMPLE),
     new Promise((resolve) => setTimeout(resolve, 1500)),
   ]).then(
     () => undefined,
@@ -278,7 +278,7 @@ export class ChartEngine {
         tree,
         settings,
         intl,
-        measure: canvasMeasure(`500 14px ${FONT_FAMILY}`, 14),
+        measure: canvasMeasure(`500 15px ${FONT_FAMILY}`, 15),
         selectedId: () => this.currentSelected,
       };
       this.renderer = new GedviewRenderer(
@@ -419,8 +419,13 @@ export class ChartEngine {
       el.dataset.link = info.status;
       if (info.phrase) {
         const id = `${this.innerId}-d-${link.childNode.id}-${link.childRole}`;
-        select(el).append('desc').attr('id', id).text(info.phrase);
+        // aria-describedby wins over aria-description: keep the full life
+        // dates the box may carry there in the same description.
+        const dates = el.getAttribute('aria-description');
+        const text = dates ? `${dates}. ${info.phrase}` : info.phrase;
+        select(el).append('desc').attr('id', id).text(text);
         el.setAttribute('aria-describedby', id);
+        el.removeAttribute('aria-description');
       }
     }
   }

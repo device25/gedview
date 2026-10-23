@@ -20,7 +20,7 @@ test.describe('demo tree', () => {
     await expect(chart(page).getByRole('button')).toHaveCount(8);
     await expect(
       chart(page).getByRole('button', {
-        name: /^Иван Петрович Соколов, 6\s\(18\)\sапреля\s1889\s—\s1957/,
+        name: /^Иван Петрович Соколов, 1889—1957/,
       }),
     ).toHaveAttribute('aria-current', 'true');
 
@@ -202,7 +202,7 @@ test.describe('typography', () => {
       page
         .locator('.gv-person', {hasText: 'Иван Петрович Соколов'})
         .locator('.gv-life'),
-    ).toHaveText('6 (18) апреля 1889 — 1957');
+    ).toHaveText('1889—1957');
     // A year range has the long dash and no spaces.
     await expect(
       page

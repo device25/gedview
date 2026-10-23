@@ -54,20 +54,21 @@ test('people with a photo show it on the chart, cropped, or their initials', asy
     buffer: Buffer.from(GED),
   });
   const anna = page.locator('.gv-person', {hasText: 'Анна Тестова'});
-  const petr = page.locator('.gv-person', {hasText: 'Пётр Тестов'});
-  await expect(anna.locator('.gv-photo image')).toHaveAttribute(
+  const annaPhoto = page.locator('.gv-photo[data-for="I1"]');
+  const petrPhoto = page.locator('.gv-photo[data-for="I2"]');
+  await expect(annaPhoto.locator('image')).toHaveAttribute(
     'href',
     'https://images.example.test/anna.png',
   );
   // CROP in image pixels becomes the view box of the portrait.
-  await expect(anna.locator('.gv-photo-frame')).toHaveAttribute(
+  await expect(annaPhoto.locator('.gv-photo-frame')).toHaveAttribute(
     'viewBox',
     '1 1 2 2',
   );
-  await expect(anna.locator('.gv-photo-ring')).toHaveClass(/gv-F/);
+  await expect(annaPhoto.locator('.gv-photo-ring')).toHaveClass(/gv-F/);
   // The image failed: the initials stay.
-  await expect(petr.locator('.gv-photo-frame')).toHaveCount(0);
-  await expect(petr.locator('.gv-initials')).toHaveText('ПТ');
+  await expect(petrPhoto.locator('.gv-photo-frame')).toHaveCount(0);
+  await expect(petrPhoto.locator('.gv-initials')).toHaveText('ПТ');
   // The portrait is decorative; the name is the label.
   await expect(anna).toHaveAccessibleName(/^Анна Тестова/);
 });
@@ -90,6 +91,6 @@ test('remote photos are not loaded when linked images are switched off', async (
     buffer: Buffer.from(GED),
   });
   await expect(page.locator('.gv-person').first()).toBeVisible();
-  await expect(page.locator('.gv-photo')).toHaveCount(0);
+  await expect(page.locator('.gv-photo image')).toHaveCount(0);
   expect(requests).toEqual([]);
 });
