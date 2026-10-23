@@ -274,7 +274,7 @@ test.describe('person card: GEDCOM 7.0 details', () => {
     await dialog.getByText('Служебные сведения', {exact: true}).last().click();
     await expectNoAxeViolations(page);
     await page.keyboard.press('Escape');
-    await page.getByRole('button', {name: 'Сменить тему'}).click();
+    await page.getByRole('button', {name: /тему$/}).click();
     await openFull(page);
     await expectNoAxeViolations(page);
   });

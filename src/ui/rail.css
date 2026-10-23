@@ -32,7 +32,7 @@
   font-weight: 600;
 }
 
-.rail__btn[data-hovered] {
+.rail__btn[data-hovered]:not([aria-disabled='true']) {
   background: color-mix(in srgb, var(--pill), transparent 40%);
   color: var(--text);
 }
@@ -43,7 +43,8 @@
   color: var(--text);
 }
 
-.rail__btn[data-disabled] {
+.rail__btn[data-disabled],
+.rail__btn[aria-disabled='true'] {
   opacity: 0.45;
   cursor: default;
 }

@@ -6,7 +6,7 @@ test.describe('accessibility (axe)', () => {
     const external = trackExternal(page);
     await openDemo(page);
     await expectNoAxeViolations(page);
-    await page.getByRole('button', {name: 'Сменить тему'}).click();
+    await page.getByRole('button', {name: /тему$/}).click();
     await expectNoAxeViolations(page);
     test.expect(external).toEqual([]);
   });
@@ -36,7 +36,7 @@ test.describe('accessibility (axe)', () => {
     await page.getByRole('dialog', {name: 'Иван Петрович Соколов'}).waitFor();
     await expectNoAxeViolations(page);
     await page.keyboard.press('Escape');
-    await page.getByRole('button', {name: 'Сменить тему'}).click();
+    await page.getByRole('button', {name: /тему$/}).click();
     await page.getByRole('button', {name: 'Все сведения'}).click();
     await page.getByRole('dialog', {name: 'Иван Петрович Соколов'}).waitFor();
     await expectNoAxeViolations(page);

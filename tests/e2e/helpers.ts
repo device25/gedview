@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import {expect, type Page} from '@playwright/test';
+import {expect, type Locator, type Page} from '@playwright/test';
 
 /** Collects every request that leaves localhost (there must be none). */
 export function trackExternal(page: Page): string[] {
@@ -47,4 +47,21 @@ export async function openDemo(page: Page, path = '/?demo') {
   await expect(
     page.getByRole('heading', {level: 2, name: 'Иван Петрович Соколов'}),
   ).toBeVisible();
+}
+
+/**
+ * Hovers like a real mouse: react-aria shows tooltips only after it has seen
+ * genuine pointer movement, which a single Playwright `hover()` right after
+ * page load does not produce. Enter, leave and enter again.
+ */
+export async function moveMouseTo(page: Page, target: Locator) {
+  await target.hover();
+  const box = await target.boundingBox();
+  if (!box) throw new Error('target is not visible');
+  await page.mouse.move(box.x + box.width + 200, box.y + box.height + 200, {
+    steps: 3,
+  });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, {
+    steps: 6,
+  });
 }
