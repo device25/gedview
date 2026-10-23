@@ -131,8 +131,20 @@ test.describe('phone layout', () => {
     // A tap on the name raises it; a tap on the chart's empty space lowers it.
     await card.getByRole('heading', {name: /Иван Петрович/}).click();
     await expect(relative).toBeVisible();
-    const svg = (await page.locator('svg.gv-svg').boundingBox())!;
-    await page.mouse.click(svg.x + 4, svg.y + 4);
+    // A point on the chart with nothing drawn on it.
+    const empty = await page.evaluate(() => {
+      const svg = document.querySelector('svg.gv-svg')!.getBoundingClientRect();
+      for (let y = svg.top + 8; y < svg.bottom; y += 12) {
+        for (let x = svg.left + 8; x < svg.right; x += 12) {
+          const el = document.elementFromPoint(x, y);
+          if (el?.closest('svg.gv-svg') && !el.closest('g, path'))
+            return {x, y};
+        }
+      }
+      return null;
+    });
+    expect(empty).not.toBeNull();
+    await page.mouse.click(empty!.x, empty!.y);
     await expect(relative).toBeHidden();
   });
 
