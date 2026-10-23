@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.local
+.DS_Store
+
+# Official FamilySearch test files: downloaded by `npm run fixtures`, not
+# redistributed (their repository carries no license).
+tests/fixtures/gedcom70/
+
+# Never commit real family trees. Put local trees for manual testing here.
+private/
+*.private.ged
+*.tsbuildinfo

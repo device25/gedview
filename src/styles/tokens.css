@@ -1,0 +1,90 @@
+/* Design tokens (see the design canvas). Light theme by default, dark via
+   prefers-color-scheme unless the user picked a theme explicitly. */
+:root {
+  color-scheme: light;
+  --page: #f2f1ee;
+  --card: #ffffff;
+  --pill: #e9e8e4;
+  --text: #1a1a1a;
+  --text-2: #66645f;
+  --accent: #2f5fc4;
+  --line: #a3a09a;
+  --warn-line: #b06f00;
+  --warn-text: #7a4a00;
+  --warn-bg: #fff0d2;
+  --male: #3b6fd4;
+  --female: #c8486e;
+  --sel-ring: #1a1a1a;
+  --shadow: rgba(30, 25, 15, 0.1);
+  --radius-s: 10px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+  --font: 'Onest', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --page: #121314;
+    --card: #1e1f21;
+    --pill: #2b2c2f;
+    --text: #f1f0ee;
+    --text-2: #aba9a4;
+    --accent: #8fb0f0;
+    --line: #6e7178;
+    --warn-line: #e9a23b;
+    --warn-text: #f2c27a;
+    --warn-bg: #3a2a10;
+    --male: #7fa6e8;
+    --female: #e58fa9;
+    --sel-ring: #8fb0f0;
+    --shadow: rgba(0, 0, 0, 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #121314;
+  --card: #1e1f21;
+  --pill: #2b2c2f;
+  --text: #f1f0ee;
+  --text-2: #aba9a4;
+  --accent: #8fb0f0;
+  --line: #6e7178;
+  --warn-line: #e9a23b;
+  --warn-text: #f2c27a;
+  --warn-bg: #3a2a10;
+  --male: #7fa6e8;
+  --female: #e58fa9;
+  --sel-ring: #8fb0f0;
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.placeholder {
+  max-width: 40rem;
+  margin: 4rem auto;
+  padding: 0 1rem;
+}

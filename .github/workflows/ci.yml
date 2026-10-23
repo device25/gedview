@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: Regenerate Linux visual snapshots and upload them
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Update Linux snapshots
+        if: ${{ inputs.update_snapshots }}
+        run: |
+          npm run fixtures
+          npm run build
+          npm run test:visual:update
+      - uses: actions/upload-artifact@v7
+        if: ${{ inputs.update_snapshots }}
+        with:
+          name: linux-snapshots
+          path: tests/visual/**/*-linux.png
+      - name: All checks
+        if: ${{ !inputs.update_snapshots }}
+        run: npm run check:all
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

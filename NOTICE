@@ -1,0 +1,7 @@
+Gedview
+Copyright 2026 Andrey Bakhvalov
+
+This product includes software developed by third parties; see
+THIRD_PARTY.md. In particular, chart layout and rendering use the
+"topola" library, Copyright Przemek Więch, licensed under the Apache
+License, Version 2.0 (https://github.com/PeWu/topola).

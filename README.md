@@ -1,0 +1,61 @@
+# Gedview
+
+Просмотрщик генеалогических деревьев в браузере с полной поддержкой
+[FamilySearch GEDCOM 7.0](https://gedcom.io/specifications/FamilySearchGEDCOMv7.html)
+(и чтением GEDCOM 5.5.1).
+
+Файл открывается и разбирается прямо в браузере: Gedview не отправляет
+ваше дерево никуда, не использует аналитику и не обращается к сторонним
+сайтам, кроме адреса, с которого вы сами попросили загрузить файл.
+
+> Работа в процессе: см. план в issues и `docs/`.
+
+## Возможности (целевые)
+
+- GEDCOM 7.0: календари (`JULIAN`, `FRENCH_R`, `HEBREW`), даты с `PHRASE`,
+  `FAMC.STAT` (спорные связи пунктиром), `PEDI`, `ASSO` с ролями (крёстные,
+  свидетели), источники с `QUAY` и `DATA/TEXT`, `EXID` со ссылками
+  (FamilySearch, Find a Grave, WikiTree), `SNOTE`, HTML-заметки, медиа с
+  `CROP` и `FILE.TRAN`, места с `MAP` и `TRAN`, `NO`, `SDATE`, `RESN`.
+- GEDZIP (`.gdz`) — дерево вместе с фотографиями.
+- Юлианские даты в двух стилях (ст. ст. / н. ст.).
+- Интерфейс на русском и английском, светлая и тёмная темы, работа с
+  клавиатуры и экранным диктором.
+
+## Сборка
+
+Нужен Node.js 22 или новее.
+
+```bash
+npm install
+npm run dev          # http://localhost:5173
+npm run build        # статические файлы в dist/
+```
+
+Проверки (то же, что в CI):
+
+```bash
+npx playwright install chromium   # один раз
+npm run check:all
+```
+
+`npm run fixtures` скачивает официальные тестовые файлы FamilySearch в
+`tests/fixtures/gedcom70/` (они не хранятся в репозитории).
+
+## Деплой
+
+`dist/` — статический сайт без серверной части: его можно положить на
+GitHub Pages, любой статический хостинг или открыть локально через
+`npm run preview`.
+
+## Личные данные
+
+Не добавляйте в репозиторий, тесты, снимки экрана и issues настоящие
+деревья с живыми людьми. Для ручной проверки кладите файлы в `private/`
+или называйте `*.private.ged` — они в `.gitignore`.
+
+## Лицензия
+
+Apache License 2.0, см. [LICENSE](LICENSE). Сторонние компоненты — в
+[THIRD_PARTY.md](THIRD_PARTY.md). Схемы родства рисует библиотека
+[topola](https://github.com/PeWu/topola) © Przemek Więch (Apache-2.0).
