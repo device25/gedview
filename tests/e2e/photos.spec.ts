@@ -1,10 +1,20 @@
-import {expect, test} from '@playwright/test';
+import {expect, test, type Page} from '@playwright/test';
 
 // A 4×4 PNG: red top-left pixel, the rest blue.
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAGUlEQVR4nGP4z8DAwMDAwMDAwMDAwMBAAQAAP5wC/mEJ1y0AAAAASUVORK5CYII=',
   'base64',
 );
+
+/** Remote images are off by default; these tests turn them on first. */
+async function allowRemoteImages(page: Page) {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'gedview.settings',
+      JSON.stringify({loadRemoteMedia: true}),
+    ),
+  );
+}
 
 const GED = [
   '0 HEAD',
@@ -47,6 +57,7 @@ test('people with a photo show it on the chart, cropped, or their initials', asy
   await page.route('https://images.example.test/missing.png', (route) =>
     route.fulfill({status: 404, body: ''}),
   );
+  await allowRemoteImages(page);
   await page.goto('/');
   await page.getByTestId('file-input').setInputFiles({
     name: 'photos.ged',
@@ -81,6 +92,7 @@ test('remote photos are not loaded when linked images are switched off', async (
     requests.push(route.request().url());
     return route.fulfill({contentType: 'image/png', body: PNG});
   });
+  await allowRemoteImages(page);
   await page.goto('/');
   await page.getByRole('button', {name: 'Настройки'}).click();
   await page.getByText('Загружать изображения по ссылкам из файла').click();

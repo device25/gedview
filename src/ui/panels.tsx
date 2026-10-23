@@ -189,6 +189,7 @@ export function SettingsPanel({mobileExtras}: {mobileExtras?: boolean}) {
       <CheckField
         isSelected={settings.loadRemoteMedia}
         onChange={(v) => set({loadRemoteMedia: v})}
+        hint={t('settings.loadRemoteMediaHint')}
       >
         {t('settings.loadRemoteMedia')}
       </CheckField>
