@@ -6,6 +6,16 @@ const PNG = Buffer.from(
   'base64',
 );
 
+/** Remote images are off by default; these tests turn them on first. */
+async function allowRemoteImages(page: Page) {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'gedview.settings',
+      JSON.stringify({loadRemoteMedia: true}),
+    ),
+  );
+}
+
 const GED = (url: string) =>
   [
     '0 HEAD',
@@ -24,6 +34,7 @@ const GED = (url: string) =>
   ].join('\n');
 
 async function openWithRemoteImage(page: Page, url: string) {
+  await allowRemoteImages(page);
   await page.goto('/');
   await page
     .locator('input[type=file]')
@@ -69,7 +80,7 @@ test.describe('media linked from the file', () => {
     await expect(page.getByRole('link', {name: /Открыть/})).toBeVisible();
   });
 
-  test('remote loading can be switched off', async ({page}) => {
+  test('remote loading is off by default', async ({page}) => {
     const requests: string[] = [];
     await page.route('https://images.example.test/**', (route) => {
       requests.push(route.request().url());
@@ -80,9 +91,9 @@ test.describe('media linked from the file', () => {
     const toggle = page.getByRole('checkbox', {
       name: 'Загружать изображения по ссылкам из файла',
     });
-    // The input is visually hidden by react-aria: click its label.
-    await page.getByText('Загружать изображения по ссылкам из файла').click();
     await expect(toggle).not.toBeChecked();
+    // The hint says why.
+    await expect(toggle).toHaveAccessibleDescription(/IP-адрес/);
     await page.keyboard.press('Escape');
     await page
       .locator('input[type=file]')

@@ -9,7 +9,8 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   disproven: 'hide',
   dateStyle: 'both',
   hideRestricted: true,
-  loadRemoteMedia: true,
+  // Off: a remote image tells another site who is looking (see the hint).
+  loadRemoteMedia: false,
 };
 
 const KEYS = {

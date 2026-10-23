@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import {useId, type ReactNode} from 'react';
 import {
   Button,
   Checkbox,
@@ -11,18 +11,27 @@ import {
 } from 'react-aria-components';
 import './controls.css';
 
-/** Checkbox with the label on the left and the box on the right. */
+/** Checkbox with the label on the left and the box on the right; an
+ *  optional hint below describes it. */
 export function CheckField({
   isSelected,
   onChange,
   children,
+  hint,
 }: {
   isSelected: boolean;
   onChange: (v: boolean) => void;
   children: ReactNode;
+  hint?: ReactNode;
 }) {
-  return (
-    <Checkbox className="check" isSelected={isSelected} onChange={onChange}>
+  const hintId = useId();
+  const box = (
+    <Checkbox
+      className="check"
+      isSelected={isSelected}
+      onChange={onChange}
+      aria-describedby={hint ? hintId : undefined}
+    >
       <span className="check__label">{children}</span>
       <span className="check__box" aria-hidden="true">
         <svg viewBox="0 0 18 18" width="18" height="18">
@@ -37,6 +46,15 @@ export function CheckField({
         </svg>
       </span>
     </Checkbox>
+  );
+  if (!hint) return box;
+  return (
+    <div className="check-field">
+      {box}
+      <p id={hintId} className="check__hint">
+        {hint}
+      </p>
+    </div>
   );
 }
 

@@ -257,6 +257,7 @@
   "nav.themeLight": "Включить светлую тему",
   "card.expand": "Развернуть карточку",
   "settings.loadRemoteMedia": "Загружать изображения по ссылкам из файла",
+  "settings.loadRemoteMediaHint": "Такие изображения лежат на чужих сайтах: те увидят ваш IP-адрес.",
   "media.open": "Открыть",
   "media.failed": "не загрузилось",
   "media.remoteOff": "по ссылке, загрузка выключена",
