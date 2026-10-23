@@ -178,9 +178,12 @@
     min-height: 44px;
   }
 
+  /* The chart ends where the card's sheet begins (its height comes from
+     the card) or, with no sheet, at the 72 px tab bar, so the person in
+     the middle is never under either. */
   .chart,
   .chart--card {
-    padding: 0 0 360px;
+    padding: 0 0 calc(var(--sheet-h, 0px) + 72px);
   }
 
   .legend,

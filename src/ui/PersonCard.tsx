@@ -1,8 +1,8 @@
-import {useState} from 'react';
+import {useLayoutEffect, useState, type PointerEvent} from 'react';
 import {Button} from 'react-aria-components';
 import {useIntl} from 'react-intl';
 import type {IndiView} from '../gedcom/types';
-import {useAppState, useDispatch} from '../store';
+import {useAppState, useDispatch, useIsMobile} from '../store';
 import {EventItem} from './events';
 import {lifeSpan} from './format';
 import {Tip} from './Tip';
@@ -20,11 +20,55 @@ export function focusShowCard() {
   setTimeout(() => document.getElementById(SHOW_CARD_ID)?.focus(), 0);
 }
 
+/** How far a finger must move on the sheet's top to count as a swipe. */
+const SWIPE = 24;
+
+/** The height the sheet takes from the chart on a phone, as `--sheet-h`
+ *  on the page, so the chart ends where the sheet begins. */
+function setSheetHeight(el: HTMLElement) {
+  document.documentElement.style.setProperty(
+    '--sheet-h',
+    `${Math.round(el.offsetHeight)}px`,
+  );
+}
+
+function useSheetHeight(el: HTMLElement | null, on: boolean) {
+  // Every render: raising or lowering the sheet re-renders the card.
+  useLayoutEffect(() => {
+    if (el && on) setSheetHeight(el);
+  });
+  // And whatever else changes its height (fonts, a window resize).
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (!el || !on) {
+      root.style.removeProperty('--sheet-h');
+      return;
+    }
+    const ro = new ResizeObserver(() => setSheetHeight(el));
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--sheet-h');
+    };
+  }, [el, on]);
+}
+
 export function PersonCard() {
-  const {tree, selectedId, rootId, cardOpen, cardExpanded, settings, lang} =
-    useAppState();
+  const {
+    tree,
+    selectedId,
+    rootId,
+    cardOpen,
+    cardExpanded,
+    sheetUp,
+    settings,
+    lang,
+  } = useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();
+  const isMobile = useIsMobile();
+  const [sheet, setSheet] = useState<HTMLElement | null>(null);
+  useSheetHeight(sheet, isMobile && cardOpen);
   // The person whose restricted details were revealed (this card only).
   const [revealedFor, setRevealedFor] = useState<string>();
   const indi = selectedId ? tree?.indis.get(selectedId) : undefined;
@@ -82,6 +126,35 @@ export function PersonCard() {
     .filter(Boolean)
     .join(' · ');
 
+  // On a phone the sheet goes up and down; elsewhere the card minimises.
+  const expanded = isMobile ? sheetUp : cardExpanded;
+  const toggle = () =>
+    isMobile
+      ? dispatch({type: 'setSheetUp', up: !sheetUp})
+      : dispatch({type: 'toggleCardExpanded'});
+  // A swipe ends wherever the finger is lifted, often off the card; the
+  // browser may also take the gesture over (pointercancel), so the last
+  // position seen counts.
+  const swipeStart = (e: PointerEvent) => {
+    if (!isMobile) return;
+    const from = e.clientY;
+    let last = from;
+    const move = (m: globalThis.PointerEvent) => {
+      last = m.clientY;
+    };
+    const end = (u: globalThis.PointerEvent) => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      const dy = (u.type === 'pointerup' ? u.clientY : last) - from;
+      if (dy < -SWIPE) dispatch({type: 'setSheetUp', up: true});
+      if (dy > SWIPE) dispatch({type: 'setSheetUp', up: false});
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  };
+
   const close = () => {
     dispatch({type: 'setCardOpen', open: false});
     focusShowCard();
@@ -89,20 +162,31 @@ export function PersonCard() {
 
   return (
     <aside
+      ref={setSheet}
       className="card"
       aria-labelledby="card-name"
-      data-expanded={cardExpanded || undefined}
+      data-expanded={expanded || undefined}
     >
       <Button
         className="card__handle"
-        aria-label={t(cardExpanded ? 'card.minimize' : 'card.expand')}
-        aria-expanded={cardExpanded}
-        onPress={() => dispatch({type: 'toggleCardExpanded'})}
+        aria-label={t(expanded ? 'card.minimize' : 'card.expand')}
+        aria-expanded={expanded}
+        onPress={toggle}
+        onPointerDown={swipeStart}
       >
         <span />
       </Button>
-      <header className="card__head">
-        <div className="card__title">
+      <header className="card__head" onPointerDown={swipeStart}>
+        {/* On a phone a tap on the name raises the sheet; the handle is the
+            control for keyboards and screen readers. */}
+        <div
+          className="card__title"
+          onClick={
+            isMobile && !sheetUp
+              ? () => dispatch({type: 'setSheetUp', up: true})
+              : undefined
+          }
+        >
           <h2 id="card-name">{name}</h2>
           <div className="card__life">{life}</div>
         </div>
@@ -134,7 +218,7 @@ export function PersonCard() {
         </Tip>
       </header>
 
-      {cardExpanded && (
+      {expanded && (
         <div className="card__body">
           <ol className="events">
             {events.visible.map((item, i) => (

@@ -63,7 +63,21 @@ export function Workspace() {
         <MapSection />
       ) : (
         <>
-          <div className={cardOpen ? 'chart chart--card' : 'chart'}>
+          <div
+            className={cardOpen ? 'chart chart--card' : 'chart'}
+            onClick={(e) => {
+              // On a phone a tap on the chart's empty space lowers the sheet.
+              if (
+                isMobile &&
+                state.sheetUp &&
+                e.target instanceof Element &&
+                e.target.closest('svg') &&
+                !e.target.closest('g.gv-person, .card')
+              ) {
+                dispatch({type: 'setSheetUp', up: false});
+              }
+            }}
+          >
             <ChartView
               tree={tree}
               scope={scope}
