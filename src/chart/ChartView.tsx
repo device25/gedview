@@ -1,74 +1,90 @@
-// PLACEHOLDER for part C: lists persons as focusable buttons in a grid.
-// Part C replaces the internals with the topola chart; the props stay.
+// The relationship chart: topola draws hourglass, relatives and fan charts,
+// d3-zoom pans and zooms them. The imperative part lives in ChartEngine.
+import {useEffect, useRef, useState} from 'react';
 import {useIntl} from 'react-intl';
 import type {ChartProps} from '../gedcom/types';
-import {displayName, lifeSpan} from '../ui/format';
+import {displayName} from '../ui/format';
+import {ChartEngine, type Tip} from './engine';
 import './chart.css';
 
-const LIMIT = 300;
-
-export function ChartView({tree, selectedId, onSelect, settings}: ChartProps) {
+export function ChartView({
+  tree,
+  view,
+  selectedId,
+  onSelect,
+  settings,
+  zoom,
+  onZoomChange,
+  fitRequest,
+}: ChartProps) {
   const intl = useIntl();
-  const people = [...tree.indis.values()];
-  const shown = people.slice(0, LIMIT);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const engineRef = useRef<ChartEngine | null>(null);
+  const [tip, setTip] = useState<Tip | null>(null);
 
+  // The engine outlives renders; it calls the latest handlers and reads the
+  // latest zoom and messages through this ref. (The intl object is new on
+  // every render of the provider, so it must not trigger a redraw itself.)
+  const latest = useRef({onSelect, onZoomChange, zoom, intl});
+  useEffect(() => {
+    latest.current = {onSelect, onZoomChange, zoom, intl};
+  });
+
+  useEffect(() => {
+    const engine = new ChartEngine(svgRef.current!, {
+      onSelect: (id) => latest.current.onSelect(id),
+      onZoom: (z) => latest.current.onZoomChange(z),
+      onTip: setTip,
+    });
+    engineRef.current = engine;
+    return () => {
+      engine.destroy();
+      engineRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    engineRef.current?.update({
+      tree,
+      view,
+      settings,
+      intl: latest.current.intl,
+      selectedId,
+      zoom: latest.current.zoom,
+    });
+  }, [tree, view, settings, intl.locale, selectedId]);
+
+  // A fit request wins over the zoom value that comes with it.
+  const seenFit = useRef(fitRequest);
+  useEffect(() => {
+    if (seenFit.current !== fitRequest) {
+      seenFit.current = fitRequest;
+      engineRef.current?.fit();
+    } else {
+      engineRef.current?.setZoom(zoom);
+    }
+  }, [zoom, fitRequest]);
+
+  const name = displayName(tree.indis.get(selectedId), selectedId);
   return (
-    <div className="chart-placeholder">
-      <ul
-        className="chart-grid"
-        aria-label={intl.formatMessage({id: 'chart.people'})}
-      >
-        {shown.map((indi) => {
-          const challenged = indi.famc.some(
-            (l) =>
-              tree.childLinkStatus.get(`${l.famId}|${indi.id}`)?.status ===
-              'CHALLENGED',
-          );
-          const name = displayName(indi);
-          const life = lifeSpan(indi, {
-            locale: intl.locale,
-            style: settings.dateStyle,
-          });
-          const dashed = challenged && settings.dashChallenged;
-          return (
-            <li key={indi.id}>
-              <button
-                type="button"
-                className="person-box"
-                data-dashed={dashed || undefined}
-                aria-current={indi.id === selectedId ? 'true' : undefined}
-                onClick={() => onSelect(indi.id)}
-              >
-                <span className="person-box__name">
-                  <span
-                    className="person-box__dot"
-                    data-sex={settings.sexColors ? indi.sex : undefined}
-                    aria-hidden="true"
-                  />
-                  {name}
-                </span>
-                <span className="person-box__life">{life}</span>
-                {settings.showIds && (
-                  <span className="person-box__id">{indi.id}</span>
-                )}
-                {challenged && (
-                  <span className="person-box__badge">
-                    {intl.formatMessage({id: 'chart.disputedShort'})}
-                  </span>
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {people.length > LIMIT && (
-        <p className="chart-placeholder__more">
-          {intl.formatMessage(
-            {id: 'chart.more'},
-            {count: people.length - LIMIT},
-          )}
-        </p>
+    <div className="gv-chart">
+      <svg
+        ref={svgRef}
+        className="gv-svg"
+        role="group"
+        aria-label={intl.formatMessage(
+          {id: 'chart.graph'},
+          {view: intl.formatMessage({id: `view.${view}`})},
+        )}
+      />
+      {tip && (
+        <div className="gv-tip" style={{left: tip.x, top: tip.y}} aria-hidden>
+          {tip.text}
+        </div>
       )}
+      <div role="status" aria-live="polite" className="sr-only">
+        {intl.formatMessage({id: 'chart.selected'}, {name})}
+      </div>
     </div>
   );
 }
