@@ -50,25 +50,6 @@ function subtree(n: LaidOut): LaidOut[] {
   return out;
 }
 
-/** Pushes overlapping boxes of one row apart, each pair evenly. */
-function spread(row: LaidOut[]): void {
-  for (let pass = 0; pass < 200; pass++) {
-    row.sort((a, b) => a.x - b.x);
-    let moved = false;
-    for (let i = 1; i < row.length; i++) {
-      const a = row[i - 1]!;
-      const b = row[i]!;
-      const need = a.x + half(a) + GAP - (b.x - half(b));
-      if (need > 0.5) {
-        a.x -= need / 2;
-        b.x += need / 2;
-        moved = true;
-      }
-    }
-    if (!moved) return;
-  }
-}
-
 /**
  * @param older whether a brother or sister of the root was born before
  *   the root (they go to the root's left); undefined = not known.
@@ -152,21 +133,100 @@ export function alignRows(
     }
   };
 
-  const side = new Map<LaidOut, Side>();
+  /** Moves a group of boxes by up to `delta`, stopping at the first box
+   *  of anyone else in any of their rows. */
+  const shiftWithin = (group: LaidOut[], delta: number) => {
+    if (Math.abs(delta) < 0.5) return;
+    const own = new Set(group);
+    let free = Math.abs(delta);
+    for (const m of group) {
+      for (const o of placed) {
+        if (own.has(o) || gen(o) !== gen(m)) continue;
+        const gap =
+          delta > 0
+            ? o.x - half(o) - (m.x + half(m)) - GAP
+            : m.x - half(m) - (o.x + half(o)) - GAP;
+        // Only boxes on the side it moves to stand in the way.
+        if ((delta > 0 ? o.x > m.x : o.x < m.x) && gap < free)
+          free = Math.max(0, gap);
+      }
+    }
+    const step = Math.sign(delta) * free;
+    for (const m of group) m.x += step;
+  };
+
   const ancestors = nodes.filter(isAncestor);
+  // The ancestor tree: each couple's parents' couples, the father's first.
+  const above = new Map<LaidOut, LaidOut[]>();
+  for (const a of ancestors) {
+    const list = above.get(a.parent!) ?? [];
+    list.push(a);
+    above.set(a.parent!, list);
+  }
+  for (const list of above.values()) {
+    list.sort((p, q) => {
+      const c = p.parent!;
+      const rank = (a: LaidOut) =>
+        c.data.indiParentNodeId === a.id
+          ? 0
+          : c.data.spouseParentNodeId === a.id
+            ? 2
+            : 1;
+      return rank(p) - rank(q);
+    });
+  }
+  const lineage = (a: LaidOut): LaidOut[] => [
+    a,
+    ...(above.get(a) ?? []).flatMap(lineage),
+  ];
+
+  // Room for each couple and all their ancestors, as in a pedigree, so a
+  // couple can stand over their child without anyone else's line crossing.
+  const room = new Map<LaidOut, number>();
+  const roomOf = (a: LaidOut): number => {
+    const parents = above.get(a) ?? [];
+    const sum =
+      parents.reduce((w, p) => w + roomOf(p), 0) +
+      GAP * Math.max(0, parents.length - 1);
+    const r = Math.max(a.data.width ?? 0, sum);
+    room.set(a, r);
+    return r;
+  };
+  /** Puts the parents of `c` over them, inside the room kept for `c`
+   *  (none for the root's own block). */
+  const placeAbove = (c: LaidOut, slot?: [number, number]) => {
+    const parents = above.get(c) ?? [];
+    if (!parents.length) return;
+    parents.forEach(roomOf);
+    const total =
+      parents.reduce((w, p) => w + room.get(p)!, 0) +
+      GAP * (parents.length - 1);
+    const both =
+      parents.some((a) => c.data.indiParentNodeId === a.id) &&
+      parents.some((a) => c.data.spouseParentNodeId === a.id);
+    // Over the one of the couple whose parents these are, or the middle.
+    const anchor = both
+      ? c.x
+      : parents.some((a) => c.data.spouseParentNodeId === a.id)
+        ? spouseX(c)
+        : indiX(c);
+    let left = anchor - total / 2;
+    if (slot) left = Math.min(Math.max(left, slot[0]), slot[1] - total);
+    for (const a of parents) {
+      const r = room.get(a)!;
+      a.x = left + r / 2;
+      placeAbove(a, [left, left + r]);
+      left += r + GAP;
+    }
+  };
+  [...core].forEach((c) => placeAbove(c));
+
+  const side = new Map<LaidOut, Side>();
   for (let g = -1; g >= (gens[0] ?? 0); g--) {
     const row = ancestors.filter((a) => gen(a) === g);
     if (!row.length) continue;
-    // Each couple above the one of them who is in the line below.
     for (const a of row) {
       const c = a.parent!;
-      const below =
-        c.data.indiParentNodeId === a.id
-          ? indiX(c)
-          : c.data.spouseParentNodeId === a.id
-            ? spouseX(c)
-            : c.x;
-      a.x += below - unionX(a);
       const s = side.get(c);
       side.set(
         a,
@@ -179,8 +239,14 @@ export function alignRows(
             : s!,
       );
     }
-    spread(row);
-    row.forEach(mark);
+  }
+  // Rows above the root hold only ancestors until their brothers and
+  // sisters are packed in, generation by generation, from the root up.
+  ancestors.forEach(mark);
+
+  for (let g = -1; g >= (gens[0] ?? 0); g--) {
+    const row = ancestors.filter((a) => gen(a) === g);
+    if (!row.length) continue;
 
     // Their other children, nearest the centre first.
     for (const a of [...row].sort((p, q) => Math.abs(p.x) - Math.abs(q.x))) {
@@ -200,19 +266,21 @@ export function alignRows(
       }
     }
 
-    // Then each couple over the middle of all their children.
+    // Then each couple, with their ancestors, toward the middle of all
+    // their children, as far as the rows above allow.
     for (const a of row) {
+      if (!a.children?.length) continue;
       const c = a.parent!;
       const xs = [
         c.data.spouseParentNodeId === a.id ? spouseX(c) : indiX(c),
-        ...(a.children ?? []).map(indiX),
+        ...a.children.map(indiX),
       ];
-      a.x += (Math.min(...xs) + Math.max(...xs)) / 2 - unionX(a);
+      const delta = (Math.min(...xs) + Math.max(...xs)) / 2 - unionX(a);
+      shiftWithin(lineage(a), delta);
     }
-    spread(row);
-    leftEdge.delete(g);
-    rightEdge.delete(g);
-    [...placed].filter((n) => gen(n) === g).forEach(mark);
+    leftEdge.clear();
+    rightEdge.clear();
+    [...placed].forEach(mark);
   }
 }
 
