@@ -61,3 +61,12 @@ test.describe('phone', () => {
     await expect(page).toHaveScreenshot('demo-mobile.png');
   });
 });
+
+test('summary, light', async ({page}) => {
+  await page.emulateMedia({colorScheme: 'light'});
+  await page.goto('/?demo#mode=summary&id=I6');
+  await expect(
+    page.getByRole('heading', {name: 'Известные предки'}),
+  ).toBeVisible();
+  await expect(page).toHaveScreenshot('summary-light.png', {fullPage: true});
+});

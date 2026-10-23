@@ -1,7 +1,11 @@
 import type {ChartSettings, LoadedTree, LoadErrorCode} from '../gedcom/types';
 import {MIN_UP, scopeDrawn, scopePeople, type ChartScope} from '../model/scope';
 import {DEFAULT_SETTINGS, type Persisted, type ThemePref} from './persist';
+import type {CheckId} from '../model/checks';
 import {DEFAULT_SCOPE, type HashState, type ScopeShape} from './hash';
+
+/** The sections of the app: the chart and the summary. */
+export type Mode = 'chart' | 'summary';
 
 export type FlyoutId = 'people' | 'sources' | 'export' | 'settings' | 'lang';
 
@@ -18,6 +22,9 @@ export interface AppState {
   rootId?: string;
   /** Who the chart shows and how many generations. */
   scope: ScopeShape;
+  mode: Mode;
+  /** The People panel lists the findings of this check (from «Сводка»). */
+  peopleCheck?: CheckId;
   settings: ChartSettings;
   theme: ThemePref;
   lang: string;
@@ -42,6 +49,8 @@ export type Action =
   | {type: 'select'; id: string}
   | {type: 'setScope'; patch: Partial<ScopeShape>}
   | {type: 'reroot'; id: string}
+  | {type: 'setMode'; mode: Mode}
+  | {type: 'showCheck'; check: CheckId | undefined}
   | {type: 'hashChanged'; hash: HashState}
   | {type: 'setSettings'; patch: Partial<ChartSettings>}
   | {type: 'setTheme'; theme: ThemePref}
@@ -68,6 +77,7 @@ export function createInitialState(
 ): AppState {
   return {
     scope: scopeFromHash(hash, DEFAULT_SCOPE),
+    mode: hash.mode ?? 'chart',
     settings: persisted.settings ?? DEFAULT_SETTINGS,
     theme: persisted.theme ?? 'system',
     lang,
@@ -146,6 +156,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         selectedId: action.id,
+        // A person is shown on the chart, with their card.
+        mode: 'chart',
         // Someone the chart does not show becomes the root, so they are seen.
         rootId: onChart(state, action.id) ? state.rootId : action.id,
         cardOpen: true,
@@ -159,11 +171,23 @@ export function reducer(state: AppState, action: Action): AppState {
         scope.up = Math.max(scope.up, MIN_UP[scope.level]);
       return {...state, scope};
     }
+    case 'setMode':
+      return {...state, mode: action.mode, flyout: null};
+    case 'showCheck':
+      return {
+        ...state,
+        peopleCheck: action.check,
+        flyout: action.check ? 'people' : state.flyout,
+      };
     case 'reroot':
       if (!state.tree?.indis.has(action.id)) return state;
       return {...state, rootId: action.id, selectedId: action.id};
     case 'hashChanged': {
-      const next = {...state, scope: scopeFromHash(action.hash, state.scope)};
+      const next: AppState = {
+        ...state,
+        scope: scopeFromHash(action.hash, state.scope),
+        mode: action.hash.mode ?? 'chart',
+      };
       const has = (id?: string) => !!id && !!state.tree?.indis.has(id);
       if (has(action.hash.id)) next.selectedId = action.hash.id;
       if (has(action.hash.root)) next.rootId = action.hash.root;
@@ -177,11 +201,12 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'setLang':
       return {...state, lang: action.lang};
     case 'openFlyout':
-      return {...state, flyout: action.id};
+      // The rail opens People as a search, not as an earlier check's list.
+      return {...state, flyout: action.id, peopleCheck: undefined};
     case 'closeFlyout':
       // A stale close (from a flyout that another one replaced) is ignored.
       if (action.id && state.flyout !== action.id) return state;
-      return {...state, flyout: null};
+      return {...state, flyout: null, peopleCheck: undefined};
     case 'setCardOpen':
       return {...state, cardOpen: action.open, cardExpanded: true};
     case 'toggleCardExpanded':

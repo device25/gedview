@@ -20,7 +20,8 @@ const RAIL_TIP_OFFSET = -4;
 
 /** Left icon rail on desktop. */
 export function Rail() {
-  const {flyout, tree, lang} = useAppState();
+  const state = useAppState();
+  const {flyout, tree, lang} = state;
   const dispatch = useDispatch();
   const intl = useIntl();
   const resolved = useResolvedTheme();
@@ -64,26 +65,33 @@ export function Rail() {
   return (
     <nav className="rail" aria-label={t('nav.label')}>
       <Logo />
-      <Tip
-        label={t('nav.chart')}
-        hint={noTree ? needsTree : undefined}
-        offset={RAIL_TIP_OFFSET}
-      >
-        <Button
-          className="rail__btn"
-          aria-label={t('nav.chart')}
-          aria-current={flyout === null && !noTree ? 'page' : undefined}
-          aria-disabled={noTree || undefined}
-          data-open={(flyout === null && !noTree) || undefined}
-          onPress={() => {
-            if (!noTree) dispatch({type: 'closeFlyout'});
-          }}
-        >
-          <span className="rail__pill">
-            <Icon name="tree" />
-          </span>
-        </Button>
-      </Tip>
+      {(['chart', 'summary'] as const).map((mode) => {
+        const current = !noTree && flyout === null && state.mode === mode;
+        const label = t(mode === 'chart' ? 'nav.chart' : 'nav.summary');
+        return (
+          <Tip
+            key={mode}
+            label={label}
+            hint={noTree ? needsTree : undefined}
+            offset={RAIL_TIP_OFFSET}
+          >
+            <Button
+              className="rail__btn"
+              aria-label={label}
+              aria-current={current ? 'page' : undefined}
+              aria-disabled={noTree || undefined}
+              data-open={current || undefined}
+              onPress={() => {
+                if (!noTree) dispatch({type: 'setMode', mode});
+              }}
+            >
+              <span className="rail__pill">
+                <Icon name={mode === 'chart' ? 'tree' : 'summary'} />
+              </span>
+            </Button>
+          </Tip>
+        );
+      })}
       <Flyout
         id="people"
         disabled={noTree}
@@ -199,7 +207,7 @@ export function Rail() {
 
 /** Bottom navigation on phones. */
 export function MobileNav() {
-  const {flyout, tree} = useAppState();
+  const {flyout, tree, mode} = useAppState();
   const dispatch = useDispatch();
   const intl = useIntl();
   const t = (id: string) => intl.formatMessage({id});
@@ -216,9 +224,13 @@ export function MobileNav() {
       className="tabbar__btn"
       isDisabled={disabled}
       data-active={active || undefined}
-      aria-current={id === 'chart' && active ? 'page' : undefined}
+      aria-current={
+        (id === 'chart' || id === 'summary') && active ? 'page' : undefined
+      }
       onPress={
-        id === 'chart' ? () => dispatch({type: 'closeFlyout'}) : undefined
+        id === 'chart' || id === 'summary'
+          ? () => dispatch({type: 'setMode', mode: id})
+          : undefined
       }
     >
       <Icon name={icon} />
@@ -228,7 +240,20 @@ export function MobileNav() {
 
   return (
     <nav className="tabbar" aria-label={t('nav.label')}>
-      {item('chart', 'tree', t('nav.chartShort'), flyout === null, noTree)}
+      {item(
+        'chart',
+        'tree',
+        t('nav.chartShort'),
+        flyout === null && mode === 'chart',
+        noTree,
+      )}
+      {item(
+        'summary',
+        'summary',
+        t('nav.summary'),
+        flyout === null && mode === 'summary',
+        noTree,
+      )}
       <Flyout
         id="people"
         disabled={noTree}

@@ -55,7 +55,7 @@ export function StoreProvider({children}: {children: ReactNode}) {
   useEffect(() => {
     if (!state.tree) return;
     const hash = buildHash(
-      {...state.scope, rootId: state.rootId},
+      {...state.scope, rootId: state.rootId, mode: state.mode},
       state.selectedId,
     );
     if (location.hash !== hash) {
@@ -69,7 +69,7 @@ export function StoreProvider({children}: {children: ReactNode}) {
         // Some sandboxes forbid history changes.
       }
     }
-  }, [state.tree, state.scope, state.rootId, state.selectedId]);
+  }, [state.tree, state.scope, state.rootId, state.selectedId, state.mode]);
 
   useEffect(() => {
     const onHash = () =>
