@@ -104,6 +104,39 @@
   fill: var(--female);
 }
 
+.gv-photo {
+  pointer-events: none;
+}
+
+.gv-photo-bg {
+  fill: var(--pill);
+}
+
+.gv-initials {
+  font: 600 12px var(--font);
+  fill: var(--text-2);
+}
+
+.gv-photo-frame {
+  clip-path: circle(50%);
+}
+
+.gv-photo-ring {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1px;
+}
+
+.gv-photo-ring.gv-M {
+  stroke: var(--male);
+  stroke-width: 2px;
+}
+
+.gv-photo-ring.gv-F {
+  stroke: var(--female);
+  stroke-width: 2px;
+}
+
 .gv-name {
   font: 500 14px var(--font);
   fill: var(--text);
