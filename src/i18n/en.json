@@ -12,7 +12,6 @@
   "nav.export": "Export",
   "nav.settings": "Settings",
   "nav.language": "Interface language: {lang}",
-  "nav.theme": "Change theme",
   "flyout.close": "Close: {title}",
   "header.views": "Chart type",
   "header.meta": "{file} · GEDCOM {version} · {count, plural, one {# person} other {# people}}",
@@ -256,5 +255,9 @@
   "role.FRIEND.F": "Friend",
   "role.NGHBR.F": "Neighbor",
   "role.SPOU.M": "Spouse",
-  "role.SPOU.F": "Spouse"
+  "role.SPOU.F": "Spouse",
+  "nav.needsTree": "Open a file first",
+  "nav.themeDark": "Switch to dark theme",
+  "nav.themeLight": "Switch to light theme",
+  "card.expand": "Expand card"
 }

@@ -99,7 +99,9 @@ test.describe('demo tree', () => {
   }) => {
     await openDemo(page);
     const card = page.getByRole('complementary');
-    const minimise = card.getByRole('button', {name: 'Свернуть карточку'});
+    const minimise = card.getByRole('button', {
+      name: /^(Свернуть|Развернуть) карточку$/,
+    });
     await minimise.click();
     await expect(minimise).toHaveAttribute('aria-expanded', 'false');
     await expect(

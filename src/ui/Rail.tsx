@@ -4,6 +4,7 @@ import {languages} from '../i18n';
 import {useAppState, useDispatch, useResolvedTheme} from '../store';
 import {Flyout} from './Flyout';
 import {Icon, Logo, type IconName} from './icons';
+import {Tip} from './Tip';
 import {
   ExportPanel,
   LanguagePanel,
@@ -24,37 +25,52 @@ export function Rail() {
   const short =
     languages.find((l) => l.code === lang)?.short ?? lang.toUpperCase();
 
+  const needsTree = t('nav.needsTree');
+
+  // Unavailable items stay focusable (aria-disabled) so their tooltip can
+  // explain why; react-aria's isDisabled would suppress hover and focus.
   const railButton = (
     id: string,
     icon: IconName,
     label: string,
     pressed?: boolean,
     disabled?: boolean,
+    shortcut?: string,
   ) => (
-    <Button
-      className="rail__btn"
-      aria-label={label}
-      isDisabled={disabled}
-      data-open={pressed || undefined}
-      data-id={id}
+    <Tip
+      label={label}
+      hint={disabled ? needsTree : undefined}
+      shortcut={disabled ? undefined : shortcut}
     >
-      <Icon name={icon} />
-    </Button>
+      <Button
+        className="rail__btn"
+        aria-label={label}
+        aria-disabled={disabled || undefined}
+        data-open={pressed || undefined}
+        data-id={id}
+      >
+        <Icon name={icon} />
+      </Button>
+    </Tip>
   );
 
   return (
     <nav className="rail" aria-label={t('nav.label')}>
       <Logo />
-      <Button
-        className="rail__btn"
-        aria-label={t('nav.chart')}
-        aria-current={flyout === null ? 'page' : undefined}
-        data-open={flyout === null || undefined}
-        isDisabled={noTree}
-        onPress={() => dispatch({type: 'closeFlyout'})}
-      >
-        <Icon name="tree" />
-      </Button>
+      <Tip label={t('nav.chart')} hint={noTree ? needsTree : undefined}>
+        <Button
+          className="rail__btn"
+          aria-label={t('nav.chart')}
+          aria-current={flyout === null && !noTree ? 'page' : undefined}
+          aria-disabled={noTree || undefined}
+          data-open={(flyout === null && !noTree) || undefined}
+          onPress={() => {
+            if (!noTree) dispatch({type: 'closeFlyout'});
+          }}
+        >
+          <Icon name="tree" />
+        </Button>
+      </Tip>
       <Flyout
         id="people"
         disabled={noTree}
@@ -66,6 +82,7 @@ export function Rail() {
           t('nav.people'),
           flyout === 'people',
           noTree,
+          '/',
         )}
       >
         <PeoplePanel />
@@ -109,29 +126,38 @@ export function Rail() {
         width={300}
         placement="right bottom"
         trigger={
-          <Button
-            className="rail__btn rail__btn--text"
-            aria-label={intl.formatMessage({id: 'nav.language'}, {lang: short})}
-            data-open={flyout === 'lang' || undefined}
-          >
-            {short}
-          </Button>
+          <Tip label={intl.formatMessage({id: 'nav.language'}, {lang: short})}>
+            <Button
+              className="rail__btn rail__btn--text"
+              aria-label={intl.formatMessage(
+                {id: 'nav.language'},
+                {lang: short},
+              )}
+              data-open={flyout === 'lang' || undefined}
+            >
+              {short}
+            </Button>
+          </Tip>
         }
       >
         <LanguagePanel onPicked={() => dispatch({type: 'closeFlyout'})} />
       </Flyout>
-      <Button
-        className="rail__btn"
-        aria-label={t('nav.theme')}
-        onPress={() =>
-          dispatch({
-            type: 'setTheme',
-            theme: resolved === 'dark' ? 'light' : 'dark',
-          })
-        }
-      >
-        <Icon name={resolved === 'dark' ? 'moon' : 'sun'} />
-      </Button>
+      <Tip label={t(resolved === 'dark' ? 'nav.themeLight' : 'nav.themeDark')}>
+        <Button
+          className="rail__btn"
+          aria-label={t(
+            resolved === 'dark' ? 'nav.themeLight' : 'nav.themeDark',
+          )}
+          onPress={() =>
+            dispatch({
+              type: 'setTheme',
+              theme: resolved === 'dark' ? 'light' : 'dark',
+            })
+          }
+        >
+          <Icon name={resolved === 'dark' ? 'moon' : 'sun'} />
+        </Button>
+      </Tip>
       <Flyout
         id="settings"
         title={t('nav.settings')}

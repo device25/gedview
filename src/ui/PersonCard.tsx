@@ -5,6 +5,7 @@ import type {IndiView} from '../gedcom/types';
 import {useAppState, useDispatch} from '../store';
 import {EventItem} from './events';
 import {lifeSpan} from './format';
+import {Tip} from './Tip';
 import {Icon} from './icons';
 import {localName} from './lang';
 import {PersonLink} from './PersonLink';
@@ -94,7 +95,7 @@ export function PersonCard() {
     >
       <Button
         className="card__handle"
-        aria-label={t('card.minimize')}
+        aria-label={t(cardExpanded ? 'card.minimize' : 'card.expand')}
         aria-expanded={cardExpanded}
         onPress={() => dispatch({type: 'toggleCardExpanded'})}
       >
@@ -105,25 +106,32 @@ export function PersonCard() {
           <h2 id="card-name">{name}</h2>
           <div className="card__life">{life}</div>
         </div>
-        <Button
-          className="icon-btn card__minimize"
-          aria-label={t('card.minimize')}
-          aria-expanded={cardExpanded}
-          onPress={() => dispatch({type: 'toggleCardExpanded'})}
+        <Tip
+          label={t(cardExpanded ? 'card.minimize' : 'card.expand')}
+          placement="bottom"
         >
-          <Icon
-            name={cardExpanded ? 'chevronUp' : 'chevronDown'}
-            size={18}
-            strokeWidth={2}
-          />
-        </Button>
-        <Button
-          className="icon-btn"
-          aria-label={t('card.close')}
-          onPress={close}
-        >
-          <Icon name="close" size={18} strokeWidth={2} />
-        </Button>
+          <Button
+            className="icon-btn card__minimize"
+            aria-label={t(cardExpanded ? 'card.minimize' : 'card.expand')}
+            aria-expanded={cardExpanded}
+            onPress={() => dispatch({type: 'toggleCardExpanded'})}
+          >
+            <Icon
+              name={cardExpanded ? 'chevronUp' : 'chevronDown'}
+              size={18}
+              strokeWidth={2}
+            />
+          </Button>
+        </Tip>
+        <Tip label={t('card.close')} shortcut="Esc" placement="bottom">
+          <Button
+            className="icon-btn"
+            aria-label={t('card.close')}
+            onPress={close}
+          >
+            <Icon name="close" size={18} strokeWidth={2} />
+          </Button>
+        </Tip>
       </header>
 
       {cardExpanded && (

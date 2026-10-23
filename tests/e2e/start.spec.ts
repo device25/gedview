@@ -1,5 +1,5 @@
 import {expect, test} from '@playwright/test';
-import {expectNoAxeViolations, trackExternal} from './helpers';
+import {expectNoAxeViolations, moveMouseTo, trackExternal} from './helpers';
 
 test.describe('start screen', () => {
   test('explains the app, offers the open actions and says the file stays local', async ({
@@ -37,13 +37,26 @@ test.describe('start screen', () => {
     expect(new URL(page.url()).hash).toBe('');
   });
 
-  test('menu items that need a tree are disabled', async ({page}) => {
+  test('menu items that need a tree are unavailable and say why', async ({
+    page,
+  }) => {
     await page.goto('/');
     for (const name of ['Схема', 'Люди и поиск', 'Источники', 'Экспорт']) {
       await expect(
         page.getByRole('button', {name, exact: true}),
-      ).toBeDisabled();
+      ).toHaveAttribute('aria-disabled', 'true');
     }
+    await moveMouseTo(
+      page,
+      page.getByRole('button', {name: 'Люди и поиск', exact: true}),
+    );
+    await expect(page.getByRole('tooltip')).toContainText(
+      'Сначала откройте файл',
+    );
+    await page
+      .getByRole('button', {name: 'Люди и поиск', exact: true})
+      .click({force: true}); // aria-disabled: Playwright would wait forever
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('button', {name: 'Настройки'})).toBeEnabled();
   });
 

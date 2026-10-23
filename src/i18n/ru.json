@@ -12,7 +12,6 @@
   "nav.export": "Экспорт",
   "nav.settings": "Настройки",
   "nav.language": "Язык интерфейса: {lang}",
-  "nav.theme": "Сменить тему",
   "flyout.close": "Закрыть: {title}",
   "header.views": "Вид схемы",
   "header.meta": "{file} · GEDCOM {version} · {count, plural, one {# человек} few {# человека} many {# человек} other {# человека}}",
@@ -256,5 +255,9 @@
   "role.CHIL.M": "Сын",
   "role.CHIL.F": "Дочь",
   "role.SPOU.M": "Супруг",
-  "role.SPOU.F": "Супруга"
+  "role.SPOU.F": "Супруга",
+  "nav.needsTree": "Сначала откройте файл",
+  "nav.themeDark": "Включить тёмную тему",
+  "nav.themeLight": "Включить светлую тему",
+  "card.expand": "Развернуть карточку"
 }

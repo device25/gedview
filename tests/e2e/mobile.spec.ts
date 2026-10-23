@@ -53,11 +53,17 @@ test.describe('phone layout', () => {
   test('the sheet handle collapses and expands the card', async ({page}) => {
     await openDemo(page);
     const card = page.getByRole('complementary');
-    await card.getByRole('button', {name: 'Свернуть карточку'}).first().click();
+    await card
+      .getByRole('button', {name: /^(Свернуть|Развернуть) карточку$/})
+      .first()
+      .click();
     await expect(
       card.getByRole('link', {name: 'Евдокия Семёновна Крылова'}),
     ).toBeHidden();
-    await card.getByRole('button', {name: 'Свернуть карточку'}).first().click();
+    await card
+      .getByRole('button', {name: /^(Свернуть|Развернуть) карточку$/})
+      .first()
+      .click();
     await expect(
       card.getByRole('link', {name: 'Евдокия Семёновна Крылова'}),
     ).toBeAttached();

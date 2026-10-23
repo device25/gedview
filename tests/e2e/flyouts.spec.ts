@@ -108,7 +108,7 @@ test.describe('language and theme', () => {
   }) => {
     await openDemo(page);
     const html = page.locator('html');
-    await page.getByRole('button', {name: 'Сменить тему'}).click();
+    await page.getByRole('button', {name: /тему$/}).click();
     await expect(html).toHaveAttribute('data-theme', 'dark');
     const bg = await page.evaluate(
       () => getComputedStyle(document.body).backgroundColor,
@@ -116,7 +116,7 @@ test.describe('language and theme', () => {
     expect(bg).toBe('rgb(18, 19, 20)');
     await page.reload();
     await expect(html).toHaveAttribute('data-theme', 'dark');
-    await page.getByRole('button', {name: 'Сменить тему'}).click();
+    await page.getByRole('button', {name: /тему$/}).click();
     await expect(html).toHaveAttribute('data-theme', 'light');
   });
 
