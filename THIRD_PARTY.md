@@ -31,6 +31,7 @@ All licenses are compatible with Apache-2.0. The Onest font
 | d3-array                           | 3.2.4   | ISC          |
 | d3-color                           | 3.1.0   | ISC          |
 | d3-dispatch                        | 3.0.1   | ISC          |
+| d3-drag                            | 3.0.0   | ISC          |
 | d3-ease                            | 3.0.1   | BSD-3-Clause |
 | d3-flextree                        | 2.1.2   | WTFPL        |
 | d3-hierarchy                       | 3.1.2   | ISC          |
@@ -39,6 +40,7 @@ All licenses are compatible with Apache-2.0. The Onest font
 | d3-selection                       | 3.0.0   | ISC          |
 | d3-timer                           | 3.0.1   | ISC          |
 | d3-transition                      | 3.0.1   | ISC          |
+| d3-zoom                            | 3.0.0   | ISC          |
 | fflate                             | 0.8.3   | MIT          |
 | inherits                           | 2.0.4   | ISC          |
 | internmap                          | 2.0.3   | ISC          |
