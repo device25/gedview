@@ -324,6 +324,13 @@ describe('lifeSpan', () => {
     expect(maria && lifeSpan(maria, en)).toBe(nb('about~1862~– 1930'));
   });
 
+  it('can give the years only, without abbreviations', () => {
+    const ivan = mockTree.indis.get('I1')!;
+    expect(lifeSpan(ivan, ru, {years: true})).toBe('1889—1957');
+    const maria = mockTree.indis.get('I3')!;
+    expect(lifeSpan(maria, ru, {years: true})).toBe(nb('около~1862~— 1930'));
+  });
+
   it('never leaves a dangling dash', () => {
     const ivan = mockTree.indis.get('I1')!;
     const keep = (pred: (tag: string) => boolean) => ({

@@ -9,6 +9,7 @@ import type {
   Calendar,
   CalendarDate,
   DateStyle,
+  DateValue,
   EventDetail,
   IndiView,
   ParsedAge,
@@ -266,12 +267,34 @@ export function joinRange(a: string, b: string, locale: string): string {
     : `${a}${dash}${b}`;
 }
 
-/** "6 апреля 1889 — 1957", "1858—1921"; empty when nothing is known. */
-export function lifeSpan(indi: IndiView, o: DateFormatOptions): string {
+/** The same date with every end reduced to its year ("около 1862"). */
+function yearOnly(date: ParsedDate | undefined): ParsedDate | undefined {
+  if (!date) return undefined;
+  const y = (c?: CalendarDate): CalendarDate | undefined =>
+    c && {...c, day: undefined, month: undefined, monthIndex: undefined};
+  const v = date.value;
+  const value: DateValue =
+    v.kind === 'exact'
+      ? {...v, date: y(v.date)!}
+      : v.kind === 'range' || v.kind === 'period'
+        ? {...v, from: y(v.from), to: y(v.to)}
+        : v;
+  return {raw: date.raw, value};
+}
+
+/** "6 апреля 1889 — 1957", "1858—1921"; empty when nothing is known. With
+ *  `years`, only the years are given (for places too narrow for full dates;
+ *  never abbreviated). */
+export function lifeSpan(
+  indi: IndiView,
+  o: DateFormatOptions,
+  {years = false}: {years?: boolean} = {},
+): string {
   const born = eventOf(indi, ['BIRT', 'CHR', 'BAPM']);
   const died = eventOf(indi, ['DEAT', 'BURI']);
-  const b = formatDate(born?.date, o);
-  const d = formatDate(died?.date, o);
+  const pick = years ? yearOnly : (x?: ParsedDate) => x;
+  const b = formatDate(pick(born?.date), o);
+  const d = formatDate(pick(died?.date), o);
   const deathKnown = indi.events.some(
     (e) => e.tag === 'DEAT' || e.tag === 'BURI',
   );
