@@ -31,6 +31,12 @@
   min-width: 0;
 }
 
+/* Extra room between "collapse" and "close": a slightly missed click on
+   the first must not dismiss the card (gap 10px + 8px). */
+.card__minimize {
+  margin-right: 8px;
+}
+
 .card__title h2 {
   margin: 0;
   font-size: 20px;

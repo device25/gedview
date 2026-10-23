@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   showIds: false,
   dashChallenged: true,
   disproven: 'hide',
-  dateStyle: 'source',
+  dateStyle: 'both',
   hideRestricted: true,
   loadRemoteMedia: true,
 };

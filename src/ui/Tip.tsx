@@ -15,6 +15,8 @@ interface TipProps {
   /** Keyboard shortcut shown next to the label. */
   shortcut?: string;
   placement?: Placement;
+  /** Distance from the trigger, px. */
+  offset?: number;
   /** A react-aria Button (it must forward hover and focus events). */
   children: ReactElement;
 }
@@ -29,12 +31,13 @@ export function Tip({
   hint,
   shortcut,
   placement = 'right',
+  offset = 10,
   children,
 }: TipProps) {
   return (
     <TooltipTrigger delay={500} closeDelay={100}>
       {children}
-      <Tooltip className="tip" placement={placement} offset={10}>
+      <Tooltip className="tip" placement={placement} offset={offset}>
         <OverlayArrow className="tip__arrow">
           <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">
             <path d="M0 0 L4 4 L8 0" />

@@ -10,7 +10,10 @@ export interface PersonEntry {
 }
 
 export function normalize(s: string): string {
-  return s.toLowerCase().replace(/ё/g, 'е');
+  return s
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/\u00a0/g, ' ');
 }
 
 /** Index of all persons: display name, life span, other names, id. */

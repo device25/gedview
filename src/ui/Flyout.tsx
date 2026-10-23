@@ -84,7 +84,9 @@ export function Flyout({
         <Popover
           className="flyout"
           placement={placement}
-          offset={18}
+          // The rail buttons span the whole rail width (72px), so the
+          // popover needs only a small gap to sit where it always did.
+          offset={4}
           style={{width}}
         >
           {dialog}
