@@ -98,7 +98,8 @@ describe('Julian Day Number', () => {
         expect(toJdn(d!), `${cal} ${jdn}`).toBe(jdn);
       }
     }
-  });
+    // ~350,000 conversions: slow on shared CI runners.
+  }, 30_000);
 
   it('round-trips far back for the western calendars', () => {
     for (let y = -4800; y < 3000; y += 37) {
