@@ -38,11 +38,18 @@ test.describe('chart views', () => {
   }) => {
     await openDemo(page);
     const ivan = person(page, /^Иван Петрович Соколов/);
-    await expect(ivan.locator('text.gv-name').first()).toHaveText(
-      'Иван Петрович Соколов',
+    // The name wraps under the portrait; the full dates do not fit, so the
+    // box shows the years and keeps the dates in its description.
+    await expect(ivan.locator('text.gv-name')).toHaveText([
+      'Иван Петрович',
+      'Соколов',
+    ]);
+    await expect(ivan.locator('text.gv-life')).toHaveText('1889—1957');
+    await expect(ivan).toHaveAccessibleName(
+      /^Иван Петрович Соколов, 1889—1957/,
     );
-    await expect(ivan.locator('text.gv-life')).toHaveText(
-      '6\u00a0(18)\u00a0апреля 1889\u00a0— 1957',
+    await expect(ivan).toHaveAccessibleDescription(
+      /6\u00a0\(18\)\u00a0апреля 1889\u00a0— 1957/,
     );
     await expect(chart(page).locator('path.link')).toHaveCount(4);
 
@@ -165,10 +172,11 @@ test.describe('disputed and disproven links', () => {
     await openDemo(page);
     const ivan = person(page, /^Иван Петрович Соколов/);
     await expect(ivan).toHaveAccessibleName(
-      'Иван Петрович Соколов, 6\u00a0(18)\u00a0апреля 1889\u00a0— 1957, Связь с родителями спорная',
+      'Иван Петрович Соколов, 1889—1957, Связь с родителями спорная',
     );
+    // The full dates that do not fit on the box and the dispute's phrase.
     await expect(ivan).toHaveAccessibleDescription(
-      /Запись о рождении не найдена/,
+      /^6\u00a0\(18\)\u00a0апреля 1889\u00a0— 1957\. Запись о рождении не найдена/,
     );
   });
 
