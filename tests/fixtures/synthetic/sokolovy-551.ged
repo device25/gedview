@@ -1,0 +1,251 @@
+0 HEAD
+1 SOUR gedview-fixture
+2 NAME Gedview synthetic fixture
+2 VERS 1
+1 DATE 23 OCT 2026
+2 TIME 12:00:00
+1 SUBM @U1@
+1 FILE sokolovy-551.ged
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+1 LANG Russian
+1 PLAC
+2 FORM Населённый пункт, Уезд, Губерния, Страна
+1 NOTE Синтетический файл для тестов Gedview. Все люди, места и документы выдуманы;
+2 CONC  совпадения случайны.
+0 @U1@ SUBM
+1 NAME Gedview (синтетические данные)
+0 @I1@ INDI
+1 NAME Пётр Ильич /Соколов/
+2 TYPE birth
+2 GIVN Пётр Ильич
+2 SURN Соколов
+1 SEX M
+1 BIRT
+2 DATE 1858
+2 PLAC с. Покровское, Старицкий уезд, Тверская губерния, Российская империя
+1 RESI Волость Покровская
+2 DATE BET 1880 AND 1890
+2 PLAC с. Покровское, Старицкий уезд, Тверская губерния, Российская империя
+1 OCCU Волостной староста
+2 DATE FROM 1895 TO 1905
+1 DEAT
+2 DATE 1921
+2 PLAC с. Покровское, Старицкий уезд, Тверская губерния, Российская империя
+2 SOUR @S4@
+3 PAGE с. 3
+3 QUAY 1
+1 FAMC @F1@
+1 FAMS @F2@
+1 NOTE @N1@
+0 @I2@ INDI
+1 NAME Мария Фёдоровна /Лаврова/
+2 TYPE maiden
+1 NAME Мария Фёдоровна /Соколова/
+2 TYPE married
+1 SEX F
+1 BIRT
+2 DATE ABT 1862
+2 SOUR @S4@
+3 PAGE с. 3
+3 QUAY 0
+3 DATA
+4 TEXT Год рождения назван по памяти родственников, без документов.
+1 DEAT
+2 DATE 1930
+1 FAMS @F2@
+0 @I3@ INDI
+1 NAME Иван Петрович /Соколов/
+2 TYPE birth
+2 GIVN Иван Петрович
+2 SURN Соколов
+2 ROMN Ivan Petrovich /Sokolov/
+3 TYPE user_defined
+3 GIVN Ivan Petrovich
+3 SURN Sokolov
+1 NAME Ванюша /Соколов/
+2 TYPE aka
+1 SEX M
+1 BIRT
+2 DATE @#DJULIAN@ 6 APR 1889
+2 PLAC с. Покровское, Старицкий уезд, Тверская губерния, Российская империя
+3 FORM Населённый пункт, Уезд, Губерния, Страна
+3 ROMN Pokrovskoye, Staritsky Uyezd, Tver Governorate, Russian Empire
+4 TYPE user_defined
+3 MAP
+4 LATI N56.5
+4 LONG E34.9
+2 SOUR @S1@
+3 PAGE л. 12 об., № 18
+3 QUAY 3
+3 DATA
+4 DATE 6 APR 1889
+4 TEXT Запись от 6 апреля 1889 года: у крестьянина Петра Ильина Соколова и жены его М
+5 CONC арии Фёдоровой родился сын Иван.
+1 BAPM
+2 DATE @#DJULIAN@ 8 APR 1889
+2 PLAC с. Покровское, Старицкий уезд, Тверская губерния, Российская империя
+2 NOTE Священник Василий.
+2 SOUR @S1@
+3 PAGE л. 12 об., № 18
+3 QUAY 3
+1 CENS
+2 DATE @#DJULIAN@ 28 JAN 1897
+2 AGE 7y
+2 PLAC с. Покровское, Старицкий уезд, Тверская губерния, Российская империя
+2 SOUR @S3@
+3 PAGE лист 41, строка 7
+3 QUAY 2
+1 DEAT
+2 DATE 1957
+2 PLAC г. Калинин, , Калининская область, СССР
+2 SOUR @S4@
+3 PAGE с. 5
+3 QUAY 1
+1 OBJE @M1@
+1 FAMC @F2@
+2 STAT challenged
+2 NOTE Запись о рождении не найдена; связь установлена по исповедной ведомости 1890 года.
+1 FAMS @F3@
+1 ASSO @I5@
+2 RELA Godfather
+1 ASSO @I6@
+2 RELA Godmother
+1 ASSO @I5@
+2 RELA Witness at the marriage
+1 SOUR @S2@
+2 PAGE л. 4, двор 9
+2 QUAY 2
+1 _FSFTID XXXX-001
+1 _UID 0f2f1a5e-6b52-4f0d-9c0a-5b1d0c0a0001
+1 NOTE @N1@
+0 @I4@ INDI
+1 NAME Евдокия Семёновна /Крылова/
+1 SEX F
+1 BIRT
+2 DATE 1893
+1 DEAT
+2 DATE 1975
+1 FAMS @F3@
+0 @I5@ INDI
+1 NAME Михаил Андреевич /Белов/
+1 SEX M
+1 BIRT
+2 DATE ABT 1860
+1 FAMS @F4@
+0 @I6@ INDI
+1 NAME Анна Ивановна /Соколова/
+1 SEX F
+0 @I7@ INDI
+1 NAME Николай Иванович /Соколов/
+1 SEX M
+1 BIRT
+2 DATE 1913
+1 EVEN Призван в армию
+2 TYPE Военная служба
+2 DATE 1941
+2 RESN confidential
+1 DEAT
+2 DATE 1942
+1 FAMC @F3@
+1 _SLUZHBA Рядовой, 31-я стрелковая дивизия
+1 NOTE <p>Погиб в <b>1942</b> году.</p><script>alert('xss')</script><a href="javascript:alert(2)">ссылка</a>
+0 @I8@ INDI
+1 NAME Александра Ивановна /Соколова/
+1 SEX F
+1 BIRT
+2 DATE 1919
+1 DEAT
+2 DATE 2004
+1 FAMC @F3@
+0 @I9@ INDI
+1 NAME Илья Матвеевич /Соколов/
+1 SEX M
+1 BIRT
+2 DATE ABT 1830
+1 NOTE Родился в крестьянской семье.
+2 CONT
+2 CONT @@sokolov — начало строки, адрес user@@example.com внутри строки.
+1 FAMS @F1@
+0 @I10@ INDI
+1 NAME Дарья Кузьминична /Орлова/
+1 SEX F
+1 BIRT
+2 DATE ABT 1835
+1 FAMS @F1@
+0 @I11@ INDI
+1 NAME Дмитрий Николаевич /Петров/
+1 SEX M
+1 BIRT
+2 DATE 1925
+1 ADOP
+2 DATE 1927
+2 FAMC @F3@
+3 ADOP BOTH
+1 FAMC @F3@
+2 PEDI adopted
+2 STAT proven
+0 @I12@ INDI
+1 NAME Сергей Михайлович /Белов/
+1 SEX M
+1 BIRT
+2 DATE ABT 1891
+1 FAMC @F2@
+2 STAT disproven
+2 NOTE Опровергнуто метрической книгой другого прихода.
+1 FAMC @F4@
+0 @F1@ FAM
+1 HUSB @I9@
+1 WIFE @I10@
+1 CHIL @I1@
+0 @F2@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
+1 MARR
+2 DATE ABT 1885
+0 @F3@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 MARR
+2 DATE @#DJULIAN@ 12 FEB 1912
+2 PLAC г. Старица, Старицкий уезд, Тверская губерния, Российская империя
+2 SOUR @S1@
+3 PAGE л. 30, № 6
+3 QUAY 3
+1 CHIL @I7@
+1 CHIL @I8@
+1 CHIL @I11@
+0 @F4@ FAM
+1 HUSB @I5@
+1 CHIL @I12@
+0 @M1@ OBJE
+1 FILE media\portrait-ivan.jpg
+2 FORM jpg
+3 TYPE photo
+2 TITL Портрет Ивана Петровича (условный)
+0 @R1@ REPO
+1 NAME Государственный архив Тверской области (условное название)
+0 @S1@ SOUR
+1 TITL Метрическая книга Покровской церкви Старицкого уезда за 1889 год
+1 ABBR Метрическая книга 1889
+1 AUTH Покровская церковь
+1 PUBL Рукопись, 1889
+1 TEXT Книга записей о рождении, браке и смер
+2 CONC ти. Содержание вымышлено.
+1 REPO @R1@
+2 CALN Ф. 160, оп. 1, д. 100
+3 MEDI manuscript
+0 @S2@ SOUR
+1 TITL Исповедные ведомости Покровской церкви за 1890 год
+1 AUTH Покровская церковь
+0 @S3@ SOUR
+1 TITL Первая всеобщая перепись населения Российской империи 1897 года
+1 AUTH Центральный статистический комитет
+0 @S4@ SOUR
+1 TITL Рассказы Александры Ивановны Соколовой, записанные в 1998 году
+1 NOTE Семейные предания, документами не подтверждены.
+0 @N1@ NOTE Фамилия записана в метрических книгах по-разному: Соколов и Соколовъ.
+0 TRLR
