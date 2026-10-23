@@ -524,6 +524,8 @@ export interface ChartProps {
   scope: import('../model/scope').ChartScope;
   selectedId: string;
   onSelect: (indiId: string) => void;
+  /** A click on a person's photo on the chart. */
+  onOpenPhoto?: (indiId: string) => void;
   settings: ChartSettings;
   /** Zoom factor (1 = 100%), owned by the app store. */
   zoom: number;

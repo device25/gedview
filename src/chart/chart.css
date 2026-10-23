@@ -125,6 +125,12 @@
   pointer-events: none;
 }
 
+/* A photo on the chart opens the media viewer. */
+.gv-photo[data-photo] {
+  pointer-events: auto;
+  cursor: zoom-in;
+}
+
 .gv-photo-bg {
   fill: var(--pill);
 }

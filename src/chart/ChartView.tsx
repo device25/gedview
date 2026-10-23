@@ -13,6 +13,7 @@ export function ChartView({
   scope,
   selectedId,
   onSelect,
+  onOpenPhoto,
   settings,
   zoom,
   onZoomChange,
@@ -26,14 +27,15 @@ export function ChartView({
   // The engine outlives renders; it calls the latest handlers and reads the
   // latest zoom and messages through this ref. (The intl object is new on
   // every render of the provider, so it must not trigger a redraw itself.)
-  const latest = useRef({onSelect, onZoomChange, zoom, intl});
+  const latest = useRef({onSelect, onOpenPhoto, onZoomChange, zoom, intl});
   useEffect(() => {
-    latest.current = {onSelect, onZoomChange, zoom, intl};
+    latest.current = {onSelect, onOpenPhoto, onZoomChange, zoom, intl};
   });
 
   useEffect(() => {
     const engine = new ChartEngine(svgRef.current!, {
       onSelect: (id) => latest.current.onSelect(id),
+      onPhoto: (id) => latest.current.onOpenPhoto?.(id),
       onZoom: (z) => latest.current.onZoomChange(z),
       onTip: setTip,
     });

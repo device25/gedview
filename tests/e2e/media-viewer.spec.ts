@@ -152,4 +152,28 @@ test.describe('media in the card', () => {
       '4 из 6',
     );
   });
+
+  test('a photo on the chart opens the viewer; initials only select', async ({
+    page,
+  }) => {
+    await openAnna(page, true);
+    const photo = page.locator('g.gv-photo[data-for="I1"]');
+    await expect(photo).toHaveAttribute('data-photo', '');
+    await photo.click();
+    await expect(page.getByRole('dialog', {name: 'Портрет'})).toContainText(
+      '1 из 6',
+    );
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('with images by link off the chart shows initials, and a click only selects', async ({
+    page,
+  }) => {
+    await openAnna(page, false);
+    const photo = page.locator('g.gv-photo[data-for="I1"]');
+    await expect(photo).not.toHaveAttribute('data-photo');
+    await photo.click({force: true});
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
 });
