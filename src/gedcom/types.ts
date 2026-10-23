@@ -281,7 +281,8 @@ export interface MediaFile {
   translations: Array<{path: string; mime?: string}>;
 }
 
-/** Crop in percent of the image (7.0 CROP). */
+/** 7.0 CROP: the region to show, in pixels of the image. Missing LEFT/TOP
+ *  are 0; missing WIDTH/HEIGHT run to the right/bottom edge. */
 export interface Crop {
   top?: number;
   left?: number;

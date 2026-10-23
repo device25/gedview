@@ -14,7 +14,8 @@ import {
 } from 'topola';
 import type {IntlShape} from 'react-intl';
 import type {ChartSettings, IndiView, LoadedTree} from '../gedcom/types';
-import {displayName, lifeSpan} from '../ui/format';
+import {displayName, initials, lifeSpan} from '../ui/format';
+import {cropBox, photoOf, type Photo} from './photo';
 import {wrapName, type Measure} from './text';
 
 export const BOX_W = 220;
@@ -26,8 +27,12 @@ export const FAMILY_H = 32;
 
 const PAD_LEFT = 14;
 const NAME_X = 30; // after the dot
+const PHOTO = 36; // portrait diameter
+const NAME_X_PHOTO = PAD_LEFT + PHOTO + 10;
 const NAME_RIGHT = 14;
 const NAME_LINE = 17.5;
+/** Life dates are set at 12px regular; `measure` is the 14px medium name font. */
+const LIFE_SCALE = 0.84;
 
 export interface RendererContext {
   tree: LoadedTree;
@@ -52,13 +57,13 @@ const isRestricted = (r: readonly string[]) =>
   r.includes('CONFIDENTIAL') || r.includes('PRIVACY');
 
 /** Life dates as shown in the box, honouring "hide restricted details". */
-function lifeOf(indi: IndiView, ctx: RendererContext): string {
+function lifeOf(indi: IndiView, ctx: RendererContext, years = false): string {
   const {settings, intl} = ctx;
   const options = {locale: intl.locale, style: settings.dateStyle};
-  if (!settings.hideRestricted) return lifeSpan(indi, options);
+  if (!settings.hideRestricted) return lifeSpan(indi, options, {years});
   if (isRestricted(indi.restrictions)) return '';
   const events = indi.events.filter((e) => !isRestricted(e.restrictions));
-  return lifeSpan({...indi, events}, options);
+  return lifeSpan({...indi, events}, options, {years});
 }
 
 export function personLook(ctx: RendererContext, id: string): PersonLook {
@@ -181,34 +186,48 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       .attr('height', BOX_H)
       .attr('rx', 14);
 
+    const photo = photoOf(this.ctx.tree.indis.get(id), this.ctx.tree, {
+      allowRemote: settings.loadRemoteMedia,
+      hideRestricted: settings.hideRestricted,
+    });
+    const textX = photo ? NAME_X_PHOTO : NAME_X;
     const idWidth = settings.showIds ? this.ctx.measure(id) + 10 : 0;
-    const maxText = BOX_W - NAME_X - NAME_RIGHT - idWidth;
+    const maxText = BOX_W - textX - NAME_RIGHT - idWidth;
     const lines = wrapName(look.name, maxText, this.ctx.measure);
-    const block = lines.length * NAME_LINE + (look.life ? 4 + 15 : 0);
+    // Full dates when they fit, else the years only (never abbreviated); the
+    // accessible name keeps the full dates.
+    const indi = this.ctx.tree.indis.get(id);
+    const life =
+      look.life && indi && this.ctx.measure(look.life) * LIFE_SCALE > maxText
+        ? lifeOf(indi, this.ctx, true)
+        : look.life;
+    const block = lines.length * NAME_LINE + (life ? 4 + 15 : 0);
     const top = (BOX_H - block) / 2;
     const nameBase = top + 13;
 
-    g.append('circle')
-      .attr(
-        'class',
-        settings.sexColors && look.sex ? `gv-dot gv-${look.sex}` : 'gv-dot',
-      )
-      .attr('cx', PAD_LEFT + 4)
-      .attr('cy', top + NAME_LINE / 2)
-      .attr('r', 4);
+    const sexClass = settings.sexColors && look.sex ? ` gv-${look.sex}` : '';
+    if (photo) {
+      this.portrait(g, photo, look.name, sexClass);
+    } else {
+      g.append('circle')
+        .attr('class', `gv-dot${sexClass}`)
+        .attr('cx', PAD_LEFT + 4)
+        .attr('cy', top + NAME_LINE / 2)
+        .attr('r', 4);
+    }
     lines.forEach((line, i) => {
       g.append('text')
         .attr('class', 'gv-name')
-        .attr('x', NAME_X)
+        .attr('x', textX)
         .attr('y', nameBase + i * NAME_LINE)
         .text(`${line} `);
     });
-    if (look.life) {
+    if (life) {
       g.append('text')
         .attr('class', 'gv-life')
-        .attr('x', NAME_X)
+        .attr('x', textX)
         .attr('y', top + lines.length * NAME_LINE + 4 + 11)
-        .text(` ${look.life}`);
+        .text(` ${life}`);
     }
     if (settings.showIds) {
       g.append('text')
@@ -218,5 +237,61 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
         .attr('text-anchor', 'end')
         .text(id);
     }
+  }
+
+  /** A round portrait at the left of the box; the initials stay underneath
+   *  and show when the image cannot be loaded. Decorative: the box's
+   *  accessible name already says who it is. */
+  private portrait(g: Group, photo: Photo, name: string, sexClass: string) {
+    const r = PHOTO / 2;
+    const p = g
+      .append('g')
+      .attr('class', 'gv-photo')
+      .attr('aria-hidden', 'true')
+      .attr('transform', `translate(${PAD_LEFT} ${(BOX_H - PHOTO) / 2})`);
+    p.append('circle')
+      .attr('class', 'gv-photo-bg')
+      .attr('cx', r)
+      .attr('cy', r)
+      .attr('r', r);
+    p.append('text')
+      .attr('class', 'gv-initials')
+      .attr('x', r)
+      .attr('y', r + 4.5)
+      .attr('text-anchor', 'middle')
+      .text(initials(name));
+    const frame = p
+      .append('svg')
+      .attr('class', 'gv-photo-frame')
+      .attr('width', PHOTO)
+      .attr('height', PHOTO)
+      .attr('preserveAspectRatio', 'xMidYMid slice');
+    const image = frame
+      .append('image')
+      .attr('href', photo.src)
+      .attr('preserveAspectRatio', 'xMidYMid slice');
+    const box = cropBox(photo.crop);
+    if (box) {
+      // The image keeps its natural size; the view box picks the region.
+      frame.attr('viewBox', box.join(' '));
+    } else if (photo.crop) {
+      // A crop without width or height: it needs the image size.
+      const probe = new Image();
+      probe.onload = () => {
+        const size = {width: probe.naturalWidth, height: probe.naturalHeight};
+        const full = cropBox(photo.crop, size);
+        if (full) frame.attr('viewBox', full.join(' '));
+        else image.attr('width', PHOTO).attr('height', PHOTO);
+      };
+      probe.src = photo.src;
+    } else {
+      image.attr('width', PHOTO).attr('height', PHOTO);
+    }
+    image.on('error', () => frame.remove());
+    p.append('circle')
+      .attr('class', `gv-photo-ring${sexClass}`)
+      .attr('cx', r)
+      .attr('cy', r)
+      .attr('r', r - 1);
   }
 }
