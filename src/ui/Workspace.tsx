@@ -85,6 +85,19 @@ export function Workspace() {
           </svg>
           {t('legend.dashed')}
         </span>
+        <span>{t('legend.marriage')}</span>
+        <span className="legend__item">
+          <svg width="28" height="8" aria-hidden="true">
+            <path
+              d="M2 4H26"
+              stroke="var(--control)"
+              strokeWidth="2"
+              strokeDasharray="2 5"
+              strokeLinecap="round"
+            />
+          </svg>
+          {t('legend.copies')}
+        </span>
         <span>{t('legend.julian')}</span>
         <span className="legend__keys">{t('legend.keys')}</span>
       </div>

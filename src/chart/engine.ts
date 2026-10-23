@@ -17,7 +17,12 @@ import {scopePeople, type ChartScope} from '../model/scope';
 import {ZOOM_MAX, ZOOM_MIN} from '../store/reducer';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {isNavKey, navigate, type NavBox, type NavEdge} from './nav';
-import {BOX_H, GedviewRenderer, type RendererContext} from './renderer';
+import {
+  BOX_H,
+  FAMILY_GAP,
+  GedviewRenderer,
+  type RendererContext,
+} from './renderer';
 import {canvasMeasure} from './text';
 import {
   centerXform,
@@ -27,6 +32,16 @@ import {
   type Size,
   type Xform,
 } from './viewport';
+
+/** The fields of a laid-out topola node that routing needs. */
+interface RoutedNode {
+  x: number;
+  y: number;
+  data: {width: number; height: number; indi?: {width?: number}} & Parameters<
+    GedviewRenderer['getIndiAnchor']
+  >[0];
+  parent?: {children?: RoutedNode[]} | null;
+}
 
 export interface Tip {
   /** Pixels from the left/top of the chart area. */
@@ -309,6 +324,7 @@ export class ChartEngine {
     const links = this.collect(renderer, origin);
     this.annotate(links, input);
     this.styleLinks(input);
+    this.routeCopies(renderer);
 
     const target = this.boxes.find((b) => b.key === this.selectedKey);
     if (target) {
@@ -332,7 +348,11 @@ export class ChartEngine {
       info.animationPromise,
       new Promise((resolve) => setTimeout(resolve, 2000)),
     ]).then(() => {
-      if (token === this.token && !this.destroyed) this.drawPills(links, input);
+      if (token === this.token && !this.destroyed) {
+        // An animated update may have moved the paths back: route again.
+        this.routeCopies(renderer);
+        this.drawPills(links, input);
+      }
     });
   }
 
@@ -427,6 +447,34 @@ export class ChartEngine {
         el.removeAttribute('aria-description');
       }
     }
+  }
+
+  /**
+   * A person with several marriages is drawn once per marriage, the copies
+   * side by side. Topola joins them with a straight line through the
+   * spouse's box; this routes it in a lane under the cards instead, from the
+   * middle of one copy to the other, hopping over the first family's line.
+   */
+  private routeCopies(renderer: GedviewRenderer): void {
+    this.inner
+      .select('g')
+      .selectAll<SVGPathElement, LinkNode>('path.link.additional-marriage')
+      .attr('d', (d) => {
+        const node = d as unknown as RoutedNode;
+        const siblings = node.parent?.children ?? [];
+        const prev = siblings[siblings.findIndex((n) => n === node) - 1];
+        if (!prev) return '';
+        const top = node.y - node.data.height / 2;
+        const lane = top + BOX_H + FAMILY_GAP / 2;
+        const x1 = prev.x + renderer.getIndiAnchor(prev.data)[0];
+        const x2 = node.x + renderer.getIndiAnchor(node.data)[0];
+        const hop = prev.x - prev.data.width / 2 + (prev.data.indi?.width ?? 0);
+        const bottom = top + BOX_H;
+        const gap = hop > x1 && hop < x2;
+        return gap
+          ? `M${x1} ${bottom}V${lane}H${hop - 6}M${hop + 6} ${lane}H${x2}V${bottom}`
+          : `M${x1} ${bottom}V${lane}H${x2}V${bottom}`;
+      });
   }
 
   /** Marks every path with how its link is drawn (CSS does the rest). */

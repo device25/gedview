@@ -334,5 +334,15 @@
   "level.cousins1.desc": "Also the grandparents' descendants: first cousins and their children.",
   "level.cousins2.desc": "Also the great-grandparents' descendants: parents' cousins and second cousins.",
   "level.all.desc": "All blood relatives and their spouses; no generation limit.",
-  "card.reroot": "Count from this person"
+  "card.reroot": "Count from this person",
+  "family.marriage": "married",
+  "family.divorce": "divorced {year}",
+  "family.annulled": "annulled {year}",
+  "family.engaged": "Engaged {year}",
+  "family.notMarried": "Not married",
+  "family.label": "Marriage: {names}, {text}",
+  "family.labelOther": "Family: {names}, {text}",
+  "family.order": "{n, selectordinal, one {#st marriage} two {#nd marriage} few {#rd marriage} other {#th marriage}}",
+  "legend.marriage": "⚭ — marriage: year and place",
+  "legend.copies": "Dotted line under the cards — the same person in different marriages"
 }
