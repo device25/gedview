@@ -25,7 +25,7 @@ describe('childLinkOf', () => {
       {indi: {id: 'I3'}, spouse: {id: 'I4'}},
       parents,
     );
-    expect(childLinkOf(child, 'hourglass')).toMatchObject({
+    expect(childLinkOf(child)).toMatchObject({
       famId: 'F1',
       childId: 'I3',
       childRole: 'indi',
@@ -48,7 +48,7 @@ describe('childLinkOf', () => {
       {indi: {id: 'I1'}, spouse: {id: 'I2'}, family: {id: 'F1'}},
       root,
     );
-    expect(childLinkOf(mothersParents, 'relatives')).toMatchObject({
+    expect(childLinkOf(mothersParents)).toMatchObject({
       famId: 'F1',
       childId: 'I4',
       childRole: 'spouse',
@@ -59,37 +59,25 @@ describe('childLinkOf', () => {
       {indi: {id: 'I7'}, spouse: {id: 'I8'}, family: {id: 'F9'}},
       root,
     );
-    expect(childLinkOf(fathersParents, 'hourglass')).toMatchObject({
+    expect(childLinkOf(fathersParents)).toMatchObject({
       famId: 'F9',
       childId: 'I3',
       childRole: 'indi',
     });
   });
 
-  it('fan chart: the hierarchy child is always the child (upside down layout)', () => {
-    const root = node('F1', 0, {indi: {id: 'I1'}, family: {id: 'F1'}});
-    // Topola's upside-down layout gives descendants negative generations.
-    const child = node('I3', -1, {indi: {id: 'I3'}}, root);
-    expect(childLinkOf(child, 'fancy')).toMatchObject({
-      famId: 'F1',
-      childId: 'I3',
-    });
-    // With the generation rule the same pair would be read backwards.
-    expect(childLinkOf(child, 'hourglass')).toBeUndefined();
-  });
-
   it('has no child link for the root, a second marriage or a nodeless family', () => {
-    expect(childLinkOf(parents, 'hourglass')).toBeUndefined();
+    expect(childLinkOf(parents)).toBeUndefined();
     const second = node(
       'F3',
       1,
       {indi: {id: 'I3'}, additionalMarriage: true},
       parents,
     );
-    expect(childLinkOf(second, 'hourglass')).toBeUndefined();
+    expect(childLinkOf(second)).toBeUndefined();
     const noFamily = node('x', 0, {indi: {id: 'I5'}});
     const orphan = node('y', 1, {indi: {id: 'I6'}}, noFamily);
-    expect(childLinkOf(orphan, 'hourglass')).toBeUndefined();
+    expect(childLinkOf(orphan)).toBeUndefined();
   });
 });
 

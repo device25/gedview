@@ -1,7 +1,6 @@
 // Draws a chart with topola into jsdom, for tests (never shipped).
 import {select} from 'd3-selection';
 import {
-  FancyChart,
   HourglassChart,
   JsonDataProvider,
   RelativesChart,
@@ -19,7 +18,6 @@ import {getIntl} from '../i18n';
 const CHARTS: Record<ChartView, new (o: ChartOptions) => Chart> = {
   hourglass: HourglassChart,
   relatives: RelativesChart,
-  fancy: FancyChart,
 };
 
 export interface Drawn {
@@ -63,9 +61,9 @@ export function drawChart(
   }).render();
   const links: Drawn['links'] = [];
   select<SVGSVGElement, unknown>('#chart')
-    .selectAll<SVGPathElement, LinkNode>('path.link, path.branch')
+    .selectAll<SVGPathElement, LinkNode>('path.link')
     .each(function (d) {
-      const link = childLinkOf(d, view);
+      const link = childLinkOf(d);
       links.push({
         el: this,
         link,

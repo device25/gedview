@@ -87,8 +87,7 @@ test.describe('demo tree', () => {
     ).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/view=relatives/);
     await expect(page.getByRole('tabpanel')).toBeVisible();
-    await page.getByRole('tab', {name: 'Веер'}).click();
-    await expect(page).toHaveURL(/view=fancy/);
+    await expect(page.getByRole('tab', {name: 'Веер'})).toHaveCount(0);
   });
 
   test('the card can be minimised, closed and shown again, and Esc closes it', async ({

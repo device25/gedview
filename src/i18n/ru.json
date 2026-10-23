@@ -18,7 +18,6 @@
   "header.metaNoVersion": "{file} · {count, plural, one {# человек} few {# человека} many {# человек} other {# человека}}",
   "view.hourglass": "Песочные часы",
   "view.relatives": "Все родственники",
-  "view.fancy": "Веер",
   "file.open": "Открыть файл",
   "file.openUrl": "По ссылке",
   "file.title": "Файл",

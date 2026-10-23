@@ -61,8 +61,6 @@ describe('child links by data, not by order', () => {
     ['hourglass', 'I1'],
     ['relatives', 'I1'],
     ['relatives', 'I5'],
-    // The fan chart only shows descendants: start above the child.
-    ['fancy', 'I2'],
   ];
   for (const [view, start] of views) {
     it(`${view} from ${start}: the disputed link is F1|I1 and nothing else`, () => {
@@ -111,7 +109,7 @@ describe('disproven and proven links (sokolovy.ged)', () => {
 });
 
 describe('every view draws official and large trees', () => {
-  for (const view of ['hourglass', 'relatives', 'fancy'] as const) {
+  for (const view of ['hourglass', 'relatives'] as const) {
     it(`${view}: maximal70.ged`, () => {
       const d = drawChart(maximal, view, 'I1');
       expect(d.svg.querySelectorAll('g.gv-person').length).toBeGreaterThan(0);
@@ -144,7 +142,7 @@ describe('every official test file draws in every view', () => {
     it(name, () => {
       const tree = treeOf(readFileSync(join(dir, name), 'utf8'));
       const ids = [...tree.indis.keys()].slice(0, 4);
-      for (const view of ['hourglass', 'relatives', 'fancy'] as const) {
+      for (const view of ['hourglass', 'relatives'] as const) {
         for (const id of ids) {
           const d = drawChart(tree, view, id, {disproven: 'dotted'});
           expect(
