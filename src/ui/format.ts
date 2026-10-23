@@ -140,6 +140,19 @@ function formatJulianBoth(
     g.monthIndex === c.monthIndex &&
     c.day !== undefined &&
     g.day !== undefined;
+  // Same year, different month: "25 марта (6 апреля) 1889".
+  if (
+    !sameMonth &&
+    g.year === c.year &&
+    c.day !== undefined &&
+    g.day !== undefined &&
+    c.monthIndex !== undefined &&
+    g.monthIndex !== undefined
+  ) {
+    const from = monthName(o.locale, c.monthIndex, 'genitive');
+    const to = monthName(o.locale, g.monthIndex, 'genitive');
+    return `${c.day}${NBSP}${from} (${g.day}${NBSP}${to}) ${c.year}`;
+  }
   if (!sameMonth) return `${recorded} (${formatParts(g, o)})`;
   const month = monthName(o.locale, c.monthIndex!, 'genitive');
   return `${c.day}${NBSP}(${g.day})${NBSP}${month} ${c.year}`;

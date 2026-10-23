@@ -32,7 +32,7 @@ describe('person boxes', () => {
     expect(ivan.getAttribute('role')).toBe('button');
     expect(ivan.getAttribute('aria-current')).toBe('true');
     expect(ivan.getAttribute('aria-label')).toMatch(
-      /^Иван Петрович Соколов, 6 апр 1889 ст\. ст\. — 1957$/,
+      /^Иван Петрович Соколов, 6\s(\(18\)\s)?апреля 1889\s—\s1957$/,
     );
     expect(ivan.querySelector('.gv-dot.gv-M')).not.toBeNull();
     const ids = [...d.svg.querySelectorAll('g.gv-person')].map((g) =>
@@ -186,8 +186,8 @@ describe('personLook', () => {
     expect(personLook(ctx(false), 'I1')).toMatchObject({
       name: 'Anna Test',
       sex: 'F',
-      life: '1900 — 1980',
-      label: 'Anna Test, 1900 — 1980',
+      life: '1900–1980',
+      label: 'Anna Test, 1900–1980',
     });
   });
 

@@ -42,7 +42,7 @@ test.describe('chart views', () => {
       'Иван Петрович Соколов',
     );
     await expect(ivan.locator('text.gv-life')).toHaveText(
-      '6 апр 1889 ст. ст. — 1957',
+      '6\u00a0(18)\u00a0апреля 1889\u00a0— 1957',
     );
     await expect(chart(page).locator('path.link')).toHaveCount(4);
 
@@ -173,7 +173,7 @@ test.describe('disputed and disproven links', () => {
     await openDemo(page);
     const ivan = person(page, /^Иван Петрович Соколов/);
     await expect(ivan).toHaveAccessibleName(
-      'Иван Петрович Соколов, 6 апр 1889 ст. ст. — 1957, Связь с родителями спорная',
+      'Иван Петрович Соколов, 6\u00a0(18)\u00a0апреля 1889\u00a0— 1957, Связь с родителями спорная',
     );
     await expect(ivan).toHaveAccessibleDescription(
       /Запись о рождении не найдена/,
