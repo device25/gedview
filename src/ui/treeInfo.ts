@@ -266,3 +266,26 @@ export function countCitations(
   personCitations(indi, events).forEach((c) => idx.add(c));
   return idx.items.length;
 }
+
+/** What the file says about itself: HEAD.NOTE, who sent it (SUBM.NAME),
+ *  the program (HEAD.SOUR.NAME) and when it was written (HEAD.DATE). */
+export function fileInfo(tree: LoadedTree): {
+  note?: string;
+  submitter?: string;
+  program?: string;
+  date?: string;
+} {
+  const head = tree.parse.records.find((r) => r.tag === 'HEAD');
+  const child = (n: typeof head, tag: string) =>
+    n?.children.find((c) => c.tag === tag);
+  const subm = child(head, 'SUBM')?.value?.replace(/@/g, '');
+  const source = child(head, 'SOUR');
+  return {
+    note: child(head, 'NOTE')?.value || undefined,
+    submitter: subm
+      ? child(tree.parse.byId.get(subm), 'NAME')?.value || undefined
+      : undefined,
+    program: child(source, 'NAME')?.value || source?.value || undefined,
+    date: child(head, 'DATE')?.value || undefined,
+  };
+}
