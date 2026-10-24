@@ -9,6 +9,7 @@ import type {
   LoadedTree,
   ParsedDate,
 } from '../gedcom/types';
+import {personCitations} from '../model/citations';
 
 /** Title of the tree: HEAD.FILE if present, else the file name sans extension. */
 export function treeTitle(tree: LoadedTree): string {
@@ -233,10 +234,9 @@ export class CitationIndex {
 
 export function countCitations(
   indi: IndiView,
-  events: Array<Pick<EventDetail, 'citations'>>,
+  events: Array<Pick<EventDetail, 'citations' | 'notes' | 'associations'>>,
 ): number {
   const idx = new CitationIndex();
-  indi.citations.forEach((c) => idx.add(c));
-  events.forEach((e) => e.citations.forEach((c) => idx.add(c)));
+  personCitations(indi, events).forEach((c) => idx.add(c));
   return idx.items.length;
 }

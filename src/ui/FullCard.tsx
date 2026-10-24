@@ -8,9 +8,11 @@ import {
 } from 'react-aria-components';
 import {useIntl, type IntlShape} from 'react-intl';
 import type {
+  Citation,
   ExternalId,
   IndiView,
   LoadedTree,
+  NoteText,
   PersonName,
 } from '../gedcom/types';
 import {useAppState, useDispatch} from '../store';
@@ -83,7 +85,10 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
     () => splitByResn(items, (i) => i.event, hide),
     [items, hide],
   );
-  const notes = splitByResn(indi.notes, restrictionsOf, hide);
+  const notes = useMemo(
+    () => splitByResn(indi.notes, restrictionsOf, hide),
+    [indi, hide],
+  );
   const media = splitByResn(indi.media, (m) => m, hide);
   const entries = mediaEntries(tree, indi, {
     hide,
@@ -106,15 +111,30 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
   // Numbers are assigned once, in reading order, for what is on screen.
   const index = useMemo(() => {
     const idx = new CitationIndex();
-    indi.citations.forEach((c) => idx.add(c));
+    const add = (cs: readonly Citation[]) => cs.forEach((c) => idx.add(c));
+    const ofNotes = (ns: readonly NoteText[]) =>
+      ns.forEach((n) => add(n.citations));
+    add(indi.citations);
     events.visible.forEach(({event: e}) => {
-      e.citations.forEach((c) => idx.add(c));
-      e.associations.forEach((a) => a.citations.forEach((c) => idx.add(c)));
+      e.associations.forEach((a) => {
+        add(a.citations);
+        ofNotes(a.notes);
+      });
+      ofNotes(e.notes);
+      add(e.citations);
     });
-    noEvents.forEach((ne) => ne.citations.forEach((c) => idx.add(c)));
-    indi.associations.forEach((a) => a.citations.forEach((c) => idx.add(c)));
+    noEvents.forEach((ne) => {
+      add(ne.citations);
+      ofNotes(ne.notes);
+    });
+    indi.associations.forEach((a) => {
+      add(a.citations);
+      ofNotes(a.notes);
+    });
+    // The person's notes, as shown (restricted ones only when revealed).
+    ofNotes(notes.visible);
     return idx;
-  }, [indi, noEvents, events]);
+  }, [indi, noEvents, events, notes]);
 
   const name = localName(indi, lang, fileLang);
   const life = lifeSpan(indi, dateOpts);
@@ -312,7 +332,7 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
       >
         {notes.visible.map((n, i) => (
           <div key={i}>
-            <NoteView note={n} />
+            <NoteView note={n} sources={index} />
             {n.sharedNoteId && (
               <div className="muted">{t('full.sharedNote')}</div>
             )}

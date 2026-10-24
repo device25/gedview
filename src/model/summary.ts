@@ -4,6 +4,7 @@
 import type {ChartSettings, LoadedTree} from '../gedcom/types';
 import {yearOf} from './bounds';
 import {parentGraph} from './chart';
+import {eventCitations, personCitations} from './citations';
 
 /** One ancestor slot in Ahnentafel order (1 = father, 2 = mother, then the
  *  father's parents…), relative to one generation. */
@@ -122,11 +123,10 @@ export function summaryFigures(tree: LoadedTree): SummaryFigures {
     for (const c of cs) quality[c.quality === undefined ? 4 : 3 - c.quality]!++;
   };
   for (const indi of tree.indis.values()) {
-    const has =
-      indi.citations.length > 0 || indi.events.some((e) => e.citations.length);
+    const cited = personCitations(indi, indi.events);
+    const has = cited.length > 0;
     if (has) sourced++;
-    countCitations(indi.citations);
-    for (const e of indi.events) countCitations(e.citations);
+    countCitations(cited);
     const birth = indi.events.find(
       (e) => ['BIRT', 'CHR', 'BAPM'].includes(e.tag) && e.date,
     );
@@ -149,7 +149,7 @@ export function summaryFigures(tree: LoadedTree): SummaryFigures {
     }
   }
   for (const fam of tree.fams.values()) {
-    for (const e of fam.events) countCitations(e.citations);
+    for (const e of fam.events) countCitations(eventCitations(e));
   }
   const decades: SummaryFigures['decades'] = [];
   if (years.length) {
