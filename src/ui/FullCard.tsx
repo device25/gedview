@@ -9,7 +9,6 @@ import {
 import {useIntl, type IntlShape} from 'react-intl';
 import type {
   Citation,
-  ExternalId,
   IndiView,
   LoadedTree,
   NoteText,
@@ -23,6 +22,7 @@ import {Icon} from './icons';
 import {localName, nameForms, pickVariant} from './lang';
 import {langArg, NoteView} from './NoteView';
 import {safeHref} from './html';
+import {ExternalIdItem} from './exid';
 import {blockedHosts, mediaEntries, type MediaEntry} from './media';
 import {RemoteOff} from './MediaParts';
 import {PersonLink} from './PersonLink';
@@ -121,6 +121,7 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
         ofNotes(a.notes);
       });
       ofNotes(e.notes);
+      ofNotes(e.place?.notes ?? []);
       add(e.citations);
     });
     noEvents.forEach((ne) => {
@@ -434,30 +435,6 @@ export function resnLabel(intl: IntlShape, r: string): string {
 }
 
 /** A link only for http(s) URLs; otherwise the value with its type URI. */
-export function ExternalIdItem({id: x}: {id: ExternalId}) {
-  const intl = useIntl();
-  const href = safeHref(x.url);
-  const link = href && /^https?:/.test(href) ? href : undefined;
-  if (link) {
-    return (
-      <a className="link" href={link} target="_blank" rel="noopener noreferrer">
-        {x.label ?? intl.formatMessage({id: 'full.externalId'})} · {x.value} ↗
-      </a>
-    );
-  }
-  return (
-    <span>
-      {x.label ?? intl.formatMessage({id: 'full.externalId'})}{' '}
-      <code>{x.value}</code>
-      {x.type && (
-        <span className="muted">
-          {' '}
-          · {intl.formatMessage({id: 'full.idType'}, {type: x.type})}
-        </span>
-      )}
-    </span>
-  );
-}
 
 function Section({
   id,
