@@ -150,6 +150,8 @@ export function summaryFigures(tree: LoadedTree): SummaryFigures {
   }
   for (const fam of tree.fams.values()) {
     for (const e of fam.events) countCitations(eventCitations(e));
+    countCitations(fam.citations);
+    for (const n of fam.notes) countCitations(n.citations);
   }
   const decades: SummaryFigures['decades'] = [];
   if (years.length) {
