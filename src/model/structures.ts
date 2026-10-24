@@ -211,9 +211,14 @@ function roleOf(node: GedcomNode | undefined): {
 }
 
 /** A SOUR structure inside a record, event, name, note, ... */
-export function citationOf(ctx: ModelContext, node: GedcomNode): Citation {
+export function citationOf(
+  ctx: ModelContext,
+  node: GedcomNode,
+  /** Read the details of the media it shows (see mediaLinkOf). */
+  mediaDetails = false,
+): Citation {
   const citation: Citation = {
-    media: mediaLinksOf(ctx, node),
+    media: mediaLinksOf(ctx, node, mediaDetails),
     notes: notesOf(ctx, node),
     node,
   };
@@ -371,6 +376,9 @@ function cropOf(node: GedcomNode | undefined): Crop | undefined {
 export function mediaLinkOf(
   ctx: ModelContext,
   node: GedcomNode,
+  /** Read the record's notes, sources and ids (not inside a citation, so a
+   *  source that shows a file that cites the source does not loop). */
+  details = true,
 ): MediaLink | undefined {
   if (node.pointer) {
     const id = pointerId(node);
@@ -387,6 +395,16 @@ export function mediaLinkOf(
     if (title) link.title = title;
     const crop = cropOf(child(node, 'CROP'));
     if (crop) link.crop = crop;
+    if (details) {
+      const notes = notesOf(ctx, rec);
+      if (notes.length) link.notes = notes;
+      const citations = children(rec, 'SOUR').map((c) =>
+        citationOf(ctx, c, false),
+      );
+      if (citations.length) link.citations = citations;
+      const exids = exidsOf(ctx, rec);
+      if (exids.length) link.exids = exids;
+    }
     return link;
   }
   const files = filesOf(node);
@@ -394,10 +412,14 @@ export function mediaLinkOf(
   return {files, restrictions: restrictionsOf(node)};
 }
 
-export function mediaLinksOf(ctx: ModelContext, node: GedcomNode): MediaLink[] {
+export function mediaLinksOf(
+  ctx: ModelContext,
+  node: GedcomNode,
+  details = true,
+): MediaLink[] {
   const result: MediaLink[] = [];
   for (const o of children(node, 'OBJE')) {
-    const link = mediaLinkOf(ctx, o);
+    const link = mediaLinkOf(ctx, o, details);
     if (link) result.push(link);
   }
   return result;
