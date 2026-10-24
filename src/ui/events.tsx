@@ -5,12 +5,15 @@ import type {
   IndiView,
   LoadedTree,
   NonEvent,
+  Place,
 } from '../gedcom/types';
 import {useAppState} from '../store';
 import {CiteRefs} from './cite';
 import {formatAge, formatDate, formatPlace} from './format';
 import {localName} from './lang';
 import {NoteView} from './NoteView';
+import {ExternalIdItem} from './exid';
+import {pickVariant, variantsOf} from './lang';
 import {PersonLink} from './PersonLink';
 import {isRestricted, type CardEvent, type CitationIndex} from './treeInfo';
 
@@ -194,7 +197,21 @@ export function EventItem({
           </span>
         )}
         {e.place && (
-          <span className="event__place">{formatPlace(e.place)}</span>
+          <span className="event__place">{placeName(e.place, lang)}</span>
+        )}
+        {full &&
+          e.place?.notes.map((n, i) => (
+            <NoteView key={`p${i}`} note={n} sources={index} />
+          ))}
+        {full && e.place && e.place.exids.length > 0 && (
+          <span className="event__line">
+            {e.place.exids.map((x, i) => (
+              <span key={i}>
+                {i > 0 && ' · '}
+                <ExternalIdItem id={x} compact />
+              </span>
+            ))}
+          </span>
         )}
         {age && (
           <span className="event__line">
@@ -224,4 +241,14 @@ export function EventItem({
       </span>
     </li>
   );
+}
+
+/** A place in the UI language when the file has its translation (PLAC.TRAN
+ *  with LANG), else as written. */
+export function placeName(place: Place, ui: string): string {
+  const variants = variantsOf(
+    {raw: place.raw, parts: place.parts, lang: place.lang},
+    place.translations,
+  );
+  return formatPlace(variants[pickVariant(variants, ui)]!.value);
 }
