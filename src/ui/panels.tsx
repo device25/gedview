@@ -21,7 +21,9 @@ import {buildIndex, searchPeople} from './search';
 import {runChecks, todayJdn} from '../model/checks';
 import {displayName, formatDate} from './format';
 import {eventLabel} from './events';
-import {listSources} from './treeInfo';
+import {listSources, sourceFacts} from './treeInfo';
+import {SourceFactsLine} from './cite';
+import {NoteView} from './NoteView';
 
 export function PeoplePanel() {
   const {peopleCheck} = useAppState();
@@ -158,12 +160,49 @@ export function SourcesPanel() {
       aria-label={intl.formatMessage({id: 'sources.title'})}
     >
       {sources.map((s) => (
-        <li key={s.id}>
-          <span>{s.title}</span>
-          <span className="source-list__id">{s.id}</span>
-        </li>
+        <SourceEntry key={s.id} id={s.id} title={s.title} />
       ))}
     </ul>
+  );
+}
+
+/** A source of the file: its title, and on opening what the file says
+ *  of it — author, publication, where it is kept, its text and notes. */
+function SourceEntry({id, title}: {id: string; title: string}) {
+  const {tree} = useAppState();
+  const view = tree?.sources?.get(id);
+  const facts = tree ? sourceFacts(tree, id) : undefined;
+  const more =
+    !!facts &&
+    (!!facts.author ||
+      !!facts.publication ||
+      facts.kept.length > 0 ||
+      !!view?.text ||
+      (view?.notes.length ?? 0) > 0);
+  if (!more) {
+    return (
+      <li>
+        <span>{title}</span>
+        <span className="source-list__id">{id}</span>
+      </li>
+    );
+  }
+  return (
+    <li>
+      <details className="source-list__details">
+        <summary>
+          <span>{title}</span>
+          <span className="source-list__id">{id}</span>
+        </summary>
+        <div className="source-list__body">
+          <SourceFactsLine facts={facts} />
+          {view?.text && <NoteView note={view.text} quote />}
+          {view?.notes.map((n, i) => (
+            <NoteView key={i} note={n} />
+          ))}
+        </div>
+      </details>
+    </li>
   );
 }
 
