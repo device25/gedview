@@ -12,6 +12,7 @@ import type {
   ParsedDate,
 } from '../gedcom/types';
 import {certainlyBefore, dateBounds, type Bounds} from './bounds';
+import {personCitations} from './citations';
 
 export type CheckGroup = 'contradiction' | 'review' | 'gap';
 
@@ -137,9 +138,7 @@ function outsideMainPart(tree: LoadedTree): string[] {
 }
 
 function hasCitation(indi: IndiView): boolean {
-  return (
-    indi.citations.length > 0 || indi.events.some((e) => e.citations.length > 0)
-  );
+  return personCitations(indi, indi.events).length > 0;
 }
 
 /** Runs every check. `today` is a Julian Day Number (for «старше 110 лет»). */

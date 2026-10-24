@@ -3,6 +3,8 @@ import {Button} from 'react-aria-components';
 import {useIntl} from 'react-intl';
 import type {NoteText} from '../gedcom/types';
 import {useAppState} from '../store';
+import {CiteRefs} from './cite';
+import type {CitationIndex} from './treeInfo';
 import {SafeHtml} from './html';
 import {pickVariant, variantsOf} from './lang';
 
@@ -13,6 +15,8 @@ interface NoteViewProps {
   note: NoteText;
   /** Render as a blockquote (citation text). */
   quote?: boolean;
+  /** The card's numbered sources: the note's own citations link there. */
+  sources?: CitationIndex;
 }
 
 /**
@@ -20,7 +24,7 @@ interface NoteViewProps {
  * written; with a marker and a button to switch between the versions.
  * text/html is sanitised, any other MIME type is shown as plain text.
  */
-export function NoteView({note, quote}: NoteViewProps) {
+export function NoteView({note, quote, sources}: NoteViewProps) {
   const intl = useIntl();
   const {lang, tree} = useAppState();
   const variants = useMemo(
@@ -60,6 +64,9 @@ export function NoteView({note, quote}: NoteViewProps) {
   return (
     <div className="note">
       {quote ? <blockquote className="note-quote">{body}</blockquote> : body}
+      {sources && note.citations.length > 0 && (
+        <CiteRefs citations={note.citations} index={sources} />
+      )}
       {variants.length > 1 && next && (
         <div className="note-variant">
           <span className="muted">{label(current.original, current.lang)}</span>

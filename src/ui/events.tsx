@@ -95,7 +95,8 @@ export function AssociationLine({
           <CiteRefs citations={a.citations} index={index} />
         </>
       )}
-      {full && a.notes.map((n, i) => <NoteView key={i} note={n} />)}
+      {full &&
+        a.notes.map((n, i) => <NoteView key={i} note={n} sources={index} />)}
     </span>
   );
 }
@@ -128,7 +129,7 @@ export function NonEventItem({
           <CiteRefs citations={ne.citations} index={index} />
         )}
         {ne.notes.map((n, i) => (
-          <NoteView key={i} note={n} />
+          <NoteView key={i} note={n} sources={index} />
         ))}
       </span>
     </li>
@@ -215,7 +216,8 @@ export function EventItem({
             {intl.formatMessage({id: 'resn.LOCKED'})}
           </span>
         )}
-        {full && e.notes.map((n, i) => <NoteView key={i} note={n} />)}
+        {full &&
+          e.notes.map((n, i) => <NoteView key={i} note={n} sources={index} />)}
         {index && e.citations.length > 0 && (
           <CiteRefs citations={e.citations} index={index} />
         )}
