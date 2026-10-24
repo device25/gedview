@@ -464,5 +464,6 @@
   "viewer.next": "Next file",
   "viewer.noPreview": "No preview",
   "source.kept": "Kept at: {where}",
-  "source.call": "call number {calls}"
+  "source.call": "call number {calls}",
+  "full.aboutFamily": "About the family"
 }

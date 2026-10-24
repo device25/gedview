@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Button,
   Dialog,
@@ -9,6 +9,7 @@ import {
 import {useIntl, type IntlShape} from 'react-intl';
 import type {
   Citation,
+  FamView,
   IndiView,
   LoadedTree,
   NoteText,
@@ -106,7 +107,17 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
     ],
     [tree, indi],
   );
-  const rel = relativesOf(tree, indi);
+  const rel = useMemo(() => relativesOf(tree, indi), [tree, indi]);
+  /** A family whose notes and sources may be shown (not restricted). */
+  const shownFamily = useCallback(
+    (famId: string) => {
+      const fam = tree.fams.get(famId);
+      return fam && !(hide && fam.restrictions.some(isRestrictedTag))
+        ? fam
+        : undefined;
+    },
+    [tree, hide],
+  );
 
   // Numbers are assigned once, in reading order, for what is on screen.
   const index = useMemo(() => {
@@ -128,6 +139,12 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
       add(ne.citations);
       ofNotes(ne.notes);
     });
+    rel.spouses.forEach((sp) => {
+      const fam = shownFamily(sp.famId);
+      if (!fam) return;
+      add(fam.citations);
+      ofNotes(fam.notes);
+    });
     indi.associations.forEach((a) => {
       add(a.citations);
       ofNotes(a.notes);
@@ -135,7 +152,7 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
     // The person's notes, as shown (restricted ones only when revealed).
     ofNotes(notes.visible);
     return idx;
-  }, [indi, noEvents, events, notes]);
+  }, [indi, noEvents, events, notes, rel, shownFamily]);
 
   const name = localName(indi, lang, fileLang);
   const life = lifeSpan(indi, dateOpts);
@@ -293,6 +310,7 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
                 ))}
               </>
             )}
+            <FamilyNotes fam={shownFamily(s.famId)} index={index} />
           </div>
         ))}
       </Section>
@@ -618,6 +636,34 @@ function MediaItem({entry, onView}: {entry: MediaEntry; onView: () => void}) {
           </a>
         )}
       </div>
+    </div>
+  );
+}
+
+const isRestrictedTag = (r: string) => r === 'CONFIDENTIAL' || r === 'PRIVACY';
+
+/** A family's own notes and sources («о семье»), under the spouse. */
+function FamilyNotes({
+  fam,
+  index,
+}: {
+  fam: FamView | undefined;
+  index: CitationIndex;
+}) {
+  const intl = useIntl();
+  if (!fam || (fam.notes.length === 0 && fam.citations.length === 0))
+    return null;
+  return (
+    <div className="family__notes">
+      <div className="muted">
+        {intl.formatMessage({id: 'full.aboutFamily'})}
+      </div>
+      {fam.notes.map((n, i) => (
+        <NoteView key={i} note={n} sources={index} />
+      ))}
+      {fam.citations.length > 0 && (
+        <CiteRefs citations={fam.citations} index={index} />
+      )}
     </div>
   );
 }
