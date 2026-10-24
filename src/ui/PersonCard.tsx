@@ -130,7 +130,7 @@ export function PersonCard() {
       ),
     ),
     countPart(intl, 'count.notes', notes.visible.length),
-    countPart(intl, 'count.media', media.visible.length),
+    countPart(intl, 'count.media', entries.length),
   ]
     .filter(Boolean)
     .join(' · ');
