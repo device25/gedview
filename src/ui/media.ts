@@ -63,6 +63,14 @@ export function resolveMedia(
   return remote && !allowRemote ? {remote, host} : {src: url, remote, host};
 }
 
+/** The earliest year a source of the media record gives (SOUR.DATA.DATE). */
+function citedYear(media: MediaLink): number | undefined {
+  const years = (media.citations ?? [])
+    .map((c) => yearOf(c.data?.date))
+    .filter((y): y is number => y !== undefined);
+  return years.length ? Math.min(...years) : undefined;
+}
+
 /** The first year written in a title: «1955 г.», «23.01.2019», «1975–1985». */
 export function titleYear(title: string): number | undefined {
   const m = /(?<!\d)(1[5-9]\d\d|20\d\d)(?!\d)/.exec(title);
@@ -124,7 +132,7 @@ export function mediaEntries(
         remote,
         host,
         image: isImageFile(file),
-        year: year ?? titleYear(title),
+        year: year ?? citedYear(media) ?? titleYear(title),
         order,
       },
     ];

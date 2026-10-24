@@ -47,6 +47,14 @@
   font-weight: 500;
 }
 
+.viewer__note {
+  flex-basis: 100%;
+  max-width: 72ch;
+  font-size: 14px;
+  color: var(--viewer-text-2);
+  white-space: pre-line;
+}
+
 .viewer__count,
 .viewer__link {
   font-size: 14px;

@@ -476,5 +476,6 @@
   "event.contact.WWW": "Website",
   "summary.about": "About the file",
   "summary.submitter": "Compiled by {name}",
-  "summary.program": "Program: {name}"
+  "summary.program": "Program: {name}",
+  "source.address": "Address: {address}"
 }

@@ -476,5 +476,6 @@
   "event.contact.WWW": "Сайт",
   "summary.about": "О файле",
   "summary.submitter": "Составитель: {name}",
-  "summary.program": "Программа: {name}"
+  "summary.program": "Программа: {name}",
+  "source.address": "Адрес: {address}"
 }

@@ -298,6 +298,11 @@ export interface MediaLink {
   title?: string;
   crop?: Crop;
   restrictions: Restriction[];
+  /** The OBJE record's NOTE, SOUR and EXID (additive; not read for media
+   *  linked from inside a citation). */
+  notes?: NoteText[];
+  citations?: Citation[];
+  exids?: ExternalId[];
 }
 
 // ---------------------------------------------------------------- places
@@ -462,6 +467,11 @@ export interface SourceView {
     name?: string;
     callNumbers: Array<{value: string; medium?: string}>;
     notes: NoteText[];
+    /** The REPO record's ADDR (its lines and CITY, CTRY…), WWW and NOTE
+     *  (additive). */
+    address?: string;
+    websites?: string[];
+    repoNotes?: NoteText[];
   }>;
   notes: NoteText[];
   media: MediaLink[];

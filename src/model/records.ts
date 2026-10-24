@@ -205,6 +205,14 @@ export function sourceViewOf(ctx: ModelContext, node: GedcomNode): SourceView {
       entry.repoId = id;
       const name = childValue(rec, 'NAME');
       if (name) entry.name = name;
+      const address = addressOf(child(rec, 'ADDR'));
+      if (address) entry.address = address;
+      const websites = children(rec, 'WWW')
+        .map((w) => w.value?.trim())
+        .filter((w): w is string => !!w);
+      if (websites.length) entry.websites = websites;
+      const repoNotes = notesOf(ctx, rec);
+      if (repoNotes.length) entry.repoNotes = repoNotes;
     }
     view.repositories.push(entry);
   }
@@ -282,4 +290,19 @@ export function buildViews(parse: ParseResult): BuiltViews {
     }
   }
   return {indis, fams, sources, childLinkStatus};
+}
+
+/** An ADDR as one text: its own lines, then ADR1–3, CITY, STAE, POST, CTRY
+ *  that are not already written in it. */
+function addressOf(addr: GedcomNode | undefined): string | undefined {
+  if (!addr) return undefined;
+  const lines = (addr.value ?? '')
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  for (const tag of ['ADR1', 'ADR2', 'ADR3', 'CITY', 'STAE', 'POST', 'CTRY']) {
+    const v = childValue(addr, tag)?.trim();
+    if (v && !lines.some((l) => l.includes(v))) lines.push(v);
+  }
+  return lines.length ? lines.join(', ') : undefined;
 }
