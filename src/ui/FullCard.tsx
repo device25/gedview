@@ -114,6 +114,10 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
     const add = (cs: readonly Citation[]) => cs.forEach((c) => idx.add(c));
     const ofNotes = (ns: readonly NoteText[]) =>
       ns.forEach((n) => add(n.citations));
+    indi.names.forEach((n) => {
+      ofNotes(n.notes ?? []);
+      add(n.citations ?? []);
+    });
     add(indi.citations);
     events.visible.forEach(({event: e}) => {
       e.associations.forEach((a) => {
@@ -181,7 +185,7 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
 
       <Section id="names" title={t('full.names')} show={indi.names.length > 0}>
         {indi.names.map((n, i) => (
-          <NameRow key={i} name={n} fileLang={fileLang} />
+          <NameRow key={i} name={n} fileLang={fileLang} sources={index} />
         ))}
         {indi.citations.length > 0 && (
           <CiteRefs citations={indi.citations} index={index} />
@@ -483,7 +487,15 @@ function Section({
  * One NAME: the form in the UI language first (when NAME.TRAN has it), the
  * other forms below with their language.
  */
-function NameRow({name, fileLang}: {name: PersonName; fileLang?: string}) {
+function NameRow({
+  name,
+  fileLang,
+  sources,
+}: {
+  name: PersonName;
+  fileLang?: string;
+  sources: CitationIndex;
+}) {
   const intl = useIntl();
   const {lang} = useAppState();
   const forms = nameForms(name, fileLang);
@@ -521,6 +533,12 @@ function NameRow({name, fileLang}: {name: PersonName; fileLang?: string}) {
               </span>
             </div>
           ),
+      )}
+      {name.notes?.map((n, k) => (
+        <NoteView key={`n${k}`} note={n} sources={sources} />
+      ))}
+      {(name.citations?.length ?? 0) > 0 && (
+        <CiteRefs citations={name.citations!} index={sources} />
       )}
     </>
   );

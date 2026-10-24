@@ -464,5 +464,8 @@
   "viewer.next": "Следующий файл",
   "viewer.noPreview": "Предпросмотра нет",
   "source.kept": "Хранится: {where}",
-  "source.call": "шифр {calls}"
+  "source.call": "шифр {calls}",
+  "summary.about": "О файле",
+  "summary.submitter": "Составитель: {name}",
+  "summary.program": "Программа: {name}"
 }

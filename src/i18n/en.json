@@ -464,5 +464,8 @@
   "viewer.next": "Next file",
   "viewer.noPreview": "No preview",
   "source.kept": "Kept at: {where}",
-  "source.call": "call number {calls}"
+  "source.call": "call number {calls}",
+  "summary.about": "About the file",
+  "summary.submitter": "Compiled by {name}",
+  "summary.program": "Program: {name}"
 }
