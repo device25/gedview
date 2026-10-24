@@ -462,5 +462,7 @@
   "viewer.close": "Close the viewer",
   "viewer.prev": "Previous file",
   "viewer.next": "Next file",
-  "viewer.noPreview": "No preview"
+  "viewer.noPreview": "No preview",
+  "source.kept": "Kept at: {where}",
+  "source.call": "call number {calls}"
 }

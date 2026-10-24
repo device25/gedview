@@ -3,7 +3,12 @@ import type {Citation, LoadedTree, Quality} from '../gedcom/types';
 import {useAppState} from '../store';
 import {formatDate} from './format';
 import {NoteView} from './NoteView';
-import {CitationIndex, sourceTitle} from './treeInfo';
+import {
+  CitationIndex,
+  sourceFacts,
+  sourceTitle,
+  type SourceFacts,
+} from './treeInfo';
 
 /** DOM id of the source entry [n] in the full card. */
 export const sourceAnchor = (n: number) => `src-${n}`;
@@ -86,6 +91,9 @@ export function SourceItem({
         <span className="muted">[{n}]</span>{' '}
         <span className="source__title">{title}</span>
       </span>
+      {citation.sourceId && (
+        <SourceFactsLine facts={sourceFacts(tree, citation.sourceId)} />
+      )}
       {citation.page && <span className="muted">{citation.page}</span>}
       {date && (
         <span className="muted">
@@ -102,5 +110,35 @@ export function SourceItem({
         <NoteView key={`n${i}`} note={note} />
       ))}
     </li>
+  );
+}
+
+/** «Автор · Издание» and «Хранится: архив, шифр …», when the file says. */
+export function SourceFactsLine({facts}: {facts?: SourceFacts}) {
+  const intl = useIntl();
+  if (!facts) return null;
+  const made = [facts.author, facts.publication].filter(Boolean).join(' · ');
+  const kept = facts.kept.map((k) =>
+    [
+      k.name,
+      k.calls.length
+        ? intl.formatMessage(
+            {id: 'source.call'},
+            {calls: intl.formatList(k.calls, {type: 'unit'})},
+          )
+        : '',
+    ]
+      .filter(Boolean)
+      .join(', '),
+  );
+  return (
+    <>
+      {made && <span className="muted">{made}</span>}
+      {kept.length > 0 && (
+        <span className="muted">
+          {intl.formatMessage({id: 'source.kept'}, {where: kept.join('; ')})}
+        </span>
+      )}
+    </>
   );
 }

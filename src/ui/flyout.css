@@ -159,6 +159,25 @@
   background: var(--page);
 }
 
+.source-list__details summary {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.source-list__details summary::marker {
+  color: var(--text-2);
+}
+
+.source-list__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
 .source-list__id {
   font-size: 12px;
   color: var(--text-2);
