@@ -30,6 +30,32 @@ export function sourceTitle(tree: LoadedTree, sourceId: string): string {
   return t || a || sourceId;
 }
 
+/** Who wrote a source, where it was published and where it is kept. */
+export interface SourceFacts {
+  author?: string;
+  publication?: string;
+  /** Archives with their call numbers («шифр»). */
+  kept: Array<{name?: string; calls: string[]}>;
+}
+
+export function sourceFacts(
+  tree: LoadedTree,
+  sourceId: string,
+): SourceFacts | undefined {
+  const view = tree.sources?.get(sourceId);
+  if (!view) return undefined;
+  return {
+    author: view.author,
+    publication: view.publication,
+    kept: view.repositories
+      .map((r) => ({
+        name: r.name,
+        calls: r.callNumbers.map((c) => c.value).filter(Boolean),
+      }))
+      .filter((r) => r.name || r.calls.length),
+  };
+}
+
 export function listSources(tree: LoadedTree): SourceRecord[] {
   return tree.parse.records
     .filter((r) => r.tag === 'SOUR' && r.xref)

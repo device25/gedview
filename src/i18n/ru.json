@@ -462,5 +462,7 @@
   "viewer.close": "Закрыть просмотр",
   "viewer.prev": "Предыдущий файл",
   "viewer.next": "Следующий файл",
-  "viewer.noPreview": "Предпросмотра нет"
+  "viewer.noPreview": "Предпросмотра нет",
+  "source.kept": "Хранится: {where}",
+  "source.call": "шифр {calls}"
 }
