@@ -140,10 +140,6 @@
   fill: var(--text-2);
 }
 
-.gv-photo-frame {
-  clip-path: circle(50%);
-}
-
 .gv-photo-ring {
   fill: none;
   stroke: var(--border);
