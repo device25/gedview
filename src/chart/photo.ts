@@ -2,7 +2,7 @@
 // that can be shown, cropped as GEDCOM 7.0 CROP says.
 
 import type {Crop, IndiView, LoadedTree, MediaLink} from '../gedcom/types';
-import {isImageFile, mediaUrl} from '../load';
+import {isPortraitFile, mediaUrl} from '../load';
 
 export interface Photo {
   src: string;
@@ -16,7 +16,7 @@ const isRestricted = (r: readonly string[]) =>
 
 /**
  * The person's portrait: the first OBJE (the most preferred one in GEDCOM)
- * whose first file is an image we may show — bundled with the tree, or a
+ * whose first file is a photo (not a scanned document) we may show — bundled with the tree, or a
  * linked http(s) image when `allowRemote` is on. Restricted media are
  * skipped when `hideRestricted` is on.
  */
@@ -45,7 +45,7 @@ function usable(
 ): Photo | undefined {
   if (hideRestricted && isRestricted(media.restrictions)) return undefined;
   const file = media.files[0];
-  if (!file || !isImageFile(file)) return undefined;
+  if (!file || !isPortraitFile(file)) return undefined;
   const src = mediaUrl(tree.media, file.path);
   if (!src) return undefined;
   if (/^https?:/i.test(src) && !allowRemote) return undefined;

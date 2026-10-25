@@ -80,3 +80,16 @@ export function mediaUrl(media: MediaMap, path: string): string | undefined {
 export function isImageFile(file: {path: string; mime?: string}): boolean {
   return (file.mime ?? guessMime(file.path))?.startsWith('image/') ?? false;
 }
+
+/**
+ * True when the file may stand for the person as a portrait: an image that
+ * is a photo, or of unknown medium. A scanned document, card or tombstone
+ * (MEDI other than PHOTO) is an image but not a portrait.
+ */
+export function isPortraitFile(file: {
+  path: string;
+  mime?: string;
+  medium?: string;
+}): boolean {
+  return isImageFile(file) && (!file.medium || file.medium === 'PHOTO');
+}
