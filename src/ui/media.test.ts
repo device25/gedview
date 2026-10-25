@@ -63,3 +63,27 @@ describe('titleYear', () => {
     expect(titleYear('Портрет')).toBeUndefined();
   });
 });
+
+describe('the portrait', () => {
+  const docTree = treeOf(
+    doc7(
+      '0 @I1@ INDI',
+      '1 OBJE @O1@',
+      '1 OBJE @O2@',
+      '0 @O1@ OBJE',
+      '1 FILE https://images.example.test/O1.jpg',
+      '2 FORM image/jpeg',
+      '3 MEDI OTHER',
+      '2 TITL Свидетельство о смерти',
+      ...obje('O2', 'Портрет'),
+    ),
+  );
+
+  it('is a photo, never a scanned document', () => {
+    const entries = mediaEntries(docTree, docTree.indis.get('I1')!, {
+      hide: true,
+      allowRemote: true,
+    });
+    expect(portraitOf(entries)?.entry.title).toBe('Портрет');
+  });
+});

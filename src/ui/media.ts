@@ -10,7 +10,7 @@ import type {
   MediaLink,
 } from '../gedcom/types';
 import {yearOf} from '../model/bounds';
-import {isImageFile, mediaUrl} from '../load';
+import {isImageFile, isPortraitFile, mediaUrl} from '../load';
 import {cropBox} from '../chart/photo';
 
 export interface MediaEntry {
@@ -151,7 +151,8 @@ export function blockedHosts(entries: MediaEntry[]): string[] {
   ];
 }
 
-/** The portrait: the first image that can be shown, and its place. */
+/** The portrait: the first photo that can be shown (a scanned document
+ *  is not one), and its place. */
 export function portraitOf(
   entries: MediaEntry[],
 ): {entry: MediaEntry; index: number} | undefined {
@@ -159,7 +160,12 @@ export function portraitOf(
   // years put it.
   let index = -1;
   entries.forEach((e, i) => {
-    if (e.image && e.src && (index === -1 || e.order < entries[index]!.order))
+    if (
+      e.image &&
+      isPortraitFile(e.file) &&
+      e.src &&
+      (index === -1 || e.order < entries[index]!.order)
+    )
       index = i;
   });
   return index === -1 ? undefined : {entry: entries[index]!, index};

@@ -17,6 +17,19 @@ const indi = (m: MediaLink[], restrictions: string[] = []) =>
 const on = {allowRemote: true, hideRestricted: true};
 
 describe('photoOf', () => {
+  it('skips scanned documents: only a photo or an image of unknown kind', () => {
+    const scan = (medium: string) =>
+      media('doc.jpg', {
+        files: [{path: 'doc.jpg', medium, translations: []}],
+      });
+    const t = tree({'doc.jpg': 'blob:doc', 'me.jpg': 'blob:me'});
+    expect(photoOf(indi([scan('OTHER'), media('me.jpg')]), t, on)?.src).toBe(
+      'blob:me',
+    );
+    expect(photoOf(indi([scan('CARD')]), t, on)).toBeUndefined();
+    expect(photoOf(indi([scan('PHOTO')]), t, on)?.src).toBe('blob:doc');
+  });
+
   it('takes the first image that can be shown', () => {
     const t = tree({'photos/anna.jpg': 'blob:anna'});
     const p = photoOf(

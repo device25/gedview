@@ -11,6 +11,7 @@ export {looksLikeZip, openGedzip} from './zip';
 export {
   decodeFilePath,
   isImageFile,
+  isPortraitFile,
   lookupMedia,
   mediaUrl,
   safeMediaUrl,
