@@ -9,6 +9,18 @@
   gap: 12px;
 }
 
+.summary-about {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 72ch;
+}
+
+.summary-about p {
+  margin: 0;
+  white-space: pre-line;
+}
+
 .summary__line {
   margin: 0;
   color: var(--text-2);

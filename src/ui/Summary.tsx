@@ -14,6 +14,7 @@ import {useAppState, useDispatch} from '../store';
 import {displayName} from './format';
 import {Icon} from './icons';
 import {RootPicker} from './ScopeControls';
+import {fileInfo} from './treeInfo';
 import './summary.css';
 
 /** «XIX» in Russian, «19th» in English. */
@@ -112,6 +113,7 @@ export function Summary() {
           share,
         })}
       </p>
+      <FileAbout />
       <div className="summary__top">
         <section
           className="summary-card summary-card--wide"
@@ -396,5 +398,29 @@ export function Summary() {
         </section>
       </div>
     </div>
+  );
+}
+
+/** The file's own note and who made it, when the file says. */
+function FileAbout() {
+  const {tree} = useAppState();
+  const intl = useIntl();
+  if (!tree) return null;
+  const info = fileInfo(tree);
+  const made = [
+    info.submitter &&
+      intl.formatMessage({id: 'summary.submitter'}, {name: info.submitter}),
+    info.program &&
+      intl.formatMessage({id: 'summary.program'}, {name: info.program}),
+  ].filter(Boolean);
+  if (!info.note && made.length === 0) return null;
+  return (
+    <section
+      className="summary-about"
+      aria-label={intl.formatMessage({id: 'summary.about'})}
+    >
+      {info.note && <p className="summary-about__note">{info.note}</p>}
+      {made.length > 0 && <p className="muted">{made.join(' · ')}</p>}
+    </section>
   );
 }

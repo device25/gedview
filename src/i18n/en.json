@@ -473,5 +473,8 @@
   "event.contact.PHON": "Phone",
   "event.contact.EMAIL": "Email",
   "event.contact.FAX": "Fax",
-  "event.contact.WWW": "Website"
+  "event.contact.WWW": "Website",
+  "summary.about": "About the file",
+  "summary.submitter": "Compiled by {name}",
+  "summary.program": "Program: {name}"
 }

@@ -473,5 +473,8 @@
   "event.contact.PHON": "Телефон",
   "event.contact.EMAIL": "Почта",
   "event.contact.FAX": "Факс",
-  "event.contact.WWW": "Сайт"
+  "event.contact.WWW": "Сайт",
+  "summary.about": "О файле",
+  "summary.submitter": "Составитель: {name}",
+  "summary.program": "Программа: {name}"
 }
