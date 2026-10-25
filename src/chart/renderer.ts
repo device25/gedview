@@ -44,6 +44,8 @@ const NAME_TOP = PAD + PHOTO + 10 + 14; // baseline of the first name line
 const NAME_LINE = 18.5;
 /** Life dates are set at 13px regular; `measure` is the 15px medium name font. */
 const LIFE_SCALE = 0.85;
+/** Numbers the portraits' clip paths: each needs an id of its own. */
+let clipCount = 0;
 
 export interface RendererContext {
   tree: LoadedTree;
@@ -404,7 +406,19 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     // A shown photo opens the media viewer (pointer only: on the keyboard
     // the card's portrait does it).
     p.attr('data-photo', '');
-    const frame = p
+    // The circle is cut by a clip path on a group, not by CSS on the frame:
+    // Firefox lays CSS clip-path shapes out inside the frame's view box, so
+    // a crop away from the image's corner cut the whole photo away.
+    const r = PHOTO / 2;
+    const id = `gv-photo-clip-${++clipCount}`;
+    p.append('clipPath')
+      .attr('id', id)
+      .append('circle')
+      .attr('cx', r)
+      .attr('cy', r)
+      .attr('r', r);
+    const clipped = p.append('g').attr('clip-path', `url(#${id})`);
+    const frame = clipped
       .append('svg')
       .attr('class', 'gv-photo-frame')
       .attr('width', PHOTO)
@@ -432,7 +446,7 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       image.attr('width', PHOTO).attr('height', PHOTO);
     }
     image.on('error', () => {
-      frame.remove();
+      clipped.remove();
       p.attr('data-photo', null);
     });
   }

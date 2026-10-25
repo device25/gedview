@@ -76,6 +76,15 @@ test('people with a photo show it on the chart, cropped, or their initials', asy
     'viewBox',
     '1 1 2 2',
   );
+  // The circle is a clip path on a group around the frame: a CSS clip-path
+  // on the frame itself hides a cropped photo in Firefox.
+  await expect(annaPhoto.locator('g[clip-path] > .gv-photo-frame')).toHaveCount(
+    1,
+  );
+  await expect(annaPhoto.locator('.gv-photo-frame')).toHaveCSS(
+    'clip-path',
+    'none',
+  );
   await expect(annaPhoto.locator('.gv-photo-ring')).toHaveClass(/gv-F/);
   // The image failed: the initials stay.
   await expect(petrPhoto.locator('.gv-photo-frame')).toHaveCount(0);
