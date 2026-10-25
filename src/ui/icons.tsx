@@ -15,6 +15,8 @@ const PATHS = {
   check: 'M5 12l4 4 10-10',
   fit: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
   plus: 'M12 5v14M5 12h14',
+  folder:
+    'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
   minus: 'M5 12h14',
   close: 'M6 6l12 12M18 6L6 18',
   chevronUp: 'M6 15l6-6 6 6',
