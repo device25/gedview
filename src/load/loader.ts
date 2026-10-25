@@ -8,13 +8,15 @@ import type {
   TreeSource,
 } from '../gedcom/types';
 import {guessMime} from '../model/mime';
-import {treeFromBytes} from '../model/tree';
+import {decodeFilePath} from '../model/mediaUrl';
+import {linkMedia, mediaPaths, treeFromBytes} from '../model/tree';
 import {loadError} from './errors';
-import {looksLikeZip, unpackGedzip} from './zip';
+import {isIgnored, looksLikeZip, pickDataset, readGedzip} from './zip';
 
 /** Largest file fetched from a URL, or picked as the tree itself. */
 export const MAX_URL_BYTES = 200 * 1024 * 1024;
-/** Largest .ged / .gdz picked from disk, and the sum of picked files. */
+/** Largest .ged read from disk. Archives and media are not read into
+ *  memory (see zip.ts), so their size does not count. */
 export const MAX_FILE_BYTES = 1024 * 1024 * 1024;
 
 export interface LoaderDeps {
@@ -31,11 +33,13 @@ const ZIP_EXT = /\.(gdz|zip)$/i;
 
 function createLoader(deps: LoaderDeps) {
   const maxUrlBytes = deps.maxUrlBytes ?? MAX_URL_BYTES;
-  const makeUrl = (bytes: Uint8Array, name: string): string => {
-    const blob = new Blob([bytes as BlobPart], {
-      type: guessMime(name) ?? 'application/octet-stream',
-    });
-    return (deps.createObjectUrl ?? ((b) => URL.createObjectURL(b)))(blob);
+  /** A blob URL for a file without copying it: a picked File or a slice
+   *  of an archive is read from disk when it is shown. */
+  const makeUrl = (blob: Blob, name: string): string => {
+    const typed = blob.type
+      ? blob
+      : blob.slice(0, blob.size, guessMime(name) ?? 'application/octet-stream');
+    return (deps.createObjectUrl ?? ((b) => URL.createObjectURL(b)))(typed);
   };
 
   function finish(
@@ -53,43 +57,75 @@ function createLoader(deps: LoaderDeps) {
     return tree;
   }
 
-  function fromZip(name: string, bytes: Uint8Array): LoadedTree {
-    const zip = unpackGedzip(bytes);
-    const media: MediaMap = new Map();
-    for (const [path, data] of zip.files) media.set(path, makeUrl(data, path));
-    return finish({kind: 'gedzip', name}, zip.gedcom, media);
+  async function fromZip(name: string, blob: Blob): Promise<LoadedTree> {
+    const archive = await readGedzip(blob);
+    const tree = finish({kind: 'gedzip', name}, archive.gedcom, new Map());
+    // Only the files the tree refers to are opened: by path, ignoring case,
+    // or by file name alone (as lookupMedia finds them).
+    const key = (s: string) => decodeFilePath(s).normalize('NFC').toLowerCase();
+    const base = (s: string) => s.slice(s.lastIndexOf('/') + 1);
+    const refs = mediaPaths(tree.parse).filter(
+      (p) => !/^[a-z][a-z0-9+.-]*:/i.test(p),
+    );
+    const names = new Set(refs.map((p) => base(key(p))));
+    if (names.size === 0) return tree;
+    const files = await archive.open((entry) => names.has(base(key(entry))));
+    const urls = new Map<Blob, string>();
+    for (const [path, data] of files) {
+      // A file listed under two paths gets one URL.
+      const url = urls.get(data) ?? makeUrl(data, path);
+      urls.set(data, url);
+      tree.media.set(path, url);
+    }
+    linkMedia(tree.parse, tree.media);
+    return tree;
   }
 
   async function fromFiles(files: File[], signal?: AbortSignal) {
     if (files.length === 0) throw loadError('NOT_GEDCOM', 'No file was given');
-    const total = files.reduce((sum, f) => sum + f.size, 0);
-    if (total > MAX_FILE_BYTES) {
-      throw loadError('TOO_LARGE', 'The files are too large');
-    }
     const relative = (f: File) =>
-      (f as File & {webkitRelativePath?: string}).webkitRelativePath || f.name;
+      (
+        (f as File & {webkitRelativePath?: string}).webkitRelativePath || f.name
+      ).replace(/\\/g, '/');
+    // A picked folder: its hidden folders (.git…) and macOS junk are not
+    // part of the tree.
+    const picked = files.filter(
+      (f) => files.length === 1 || !isIgnored(relative(f)),
+    );
 
-    const zip = files.find((f) => ZIP_EXT.test(f.name));
+    const zip = picked.find((f) => ZIP_EXT.test(f.name));
     if (zip) {
       signal?.throwIfAborted();
-      return fromZip(zip.name, new Uint8Array(await zip.arrayBuffer()));
+      return fromZip(zip.name, zip);
     }
-    // One file of any name is tried as GEDCOM; with several, the .ged is it.
-    const ged = files.find((f) => GEDCOM_EXT.test(f.name)) ?? files[0]!;
+    // One file of any name is tried as GEDCOM; with several, the .ged (the
+    // one nearest the top of a folder).
+    const gedName = pickDataset(
+      picked.filter((f) => GEDCOM_EXT.test(f.name)).map(relative),
+    );
+    const ged =
+      picked.find((f) => gedName !== undefined && relative(f) === gedName) ??
+      picked.find((f) => GEDCOM_EXT.test(f.name)) ??
+      picked[0]!;
+    if (ged.size > MAX_FILE_BYTES) {
+      throw loadError('TOO_LARGE', 'The file is too large');
+    }
     signal?.throwIfAborted();
+    const head = new Uint8Array(await ged.slice(0, 4).arrayBuffer());
+    if (looksLikeZip(head)) return fromZip(ged.name, ged);
     const bytes = new Uint8Array(await ged.arrayBuffer());
-    if (looksLikeZip(bytes)) return fromZip(ged.name, bytes);
 
-    // Loose media: by path relative to the .ged and by file name alone.
+    // Loose media: by path relative to the .ged and by file name alone;
+    // each File is shown straight from disk, never copied.
     const media: MediaMap = new Map();
     const gedPath = relative(ged);
     const dir = gedPath.includes('/')
       ? gedPath.slice(0, gedPath.lastIndexOf('/') + 1)
       : '';
-    for (const f of files) {
+    for (const f of picked) {
       if (f === ged) continue;
       signal?.throwIfAborted();
-      const url = makeUrl(new Uint8Array(await f.arrayBuffer()), f.name);
+      const url = makeUrl(f, f.name);
       const path = relative(f);
       const inside =
         dir && path.startsWith(dir) ? path.slice(dir.length) : path;
@@ -181,7 +217,7 @@ function createLoader(deps: LoaderDeps) {
       }
     }
     if (looksLikeZip(bytes) || ZIP_EXT.test(parsed.pathname)) {
-      return fromZip(name, bytes);
+      return fromZip(name, new Blob([bytes as BlobPart]));
     }
     return finish({kind: 'url', name}, bytes, new Map());
   }

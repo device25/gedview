@@ -4,7 +4,7 @@ import {strToU8, zipSync} from 'fflate';
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {mediaUrl} from '../model/mediaUrl';
 import {createLoadTree, isLoadError, revokeTreeMedia} from './index';
-import {looksLikeZip, unpackGedzip} from './zip';
+import {looksLikeZip, openGedzip} from './zip';
 
 const GED = (...body: string[]) =>
   ['0 HEAD', '1 GEDC', '2 VERS 7.0', ...body, '0 TRLR'].join('\n');
@@ -312,7 +312,7 @@ describe('GEDZIP', () => {
       if (local) zip[i + 7] = zip[i + 7]! & ~0x08;
       if (central) zip[i + 9] = zip[i + 9]! & ~0x08;
     }
-    const unpacked = unpackGedzip(zip);
+    const unpacked = await openGedzip(new Blob([zip]));
     expect([...unpacked.files.keys()]).toContain('media/CharlotteBrontë.jpg');
     const tree = await load({kind: 'files', files: [file('t.gdz', zip)]});
     expect(
@@ -320,36 +320,86 @@ describe('GEDZIP', () => {
     ).toBeDefined();
   });
 
-  it('finds the dataset: gedcom.ged, else the only .ged, else the only one at the root', () => {
+  it('finds the dataset: gedcom.ged, else the only .ged, else the only one nearest the root', async () => {
     const ged = strToU8(WITH_PERSON);
-    expect(
-      unpackGedzip(zipSync({'gedcom.ged': ged, 'other.ged': ged})).gedcomName,
-    ).toBe('gedcom.ged');
-    expect(unpackGedzip(zipSync({'GEDCOM.GED': ged})).gedcomName).toBe(
-      'GEDCOM.GED',
+    const name = async (files: Record<string, Uint8Array>) =>
+      (await openGedzip(new Blob([zipSync(files)]))).gedcomName;
+    expect(await name({'gedcom.ged': ged, 'other.ged': ged})).toBe(
+      'gedcom.ged',
     );
+    expect(await name({'GEDCOM.GED': ged})).toBe('GEDCOM.GED');
+    expect(await name({'tree/my.ged': ged, 'media/a.jpg': ged})).toBe(
+      'tree/my.ged',
+    );
+    expect(await name({'my.ged': ged, 'old/backup.ged': ged})).toBe('my.ged');
+    // A whole project folder: the tree, its backups and hidden worktrees.
     expect(
-      unpackGedzip(zipSync({'tree/my.ged': ged, 'media/a.jpg': ged}))
-        .gedcomName,
-    ).toBe('tree/my.ged');
-    expect(
-      unpackGedzip(zipSync({'my.ged': ged, 'old/backup.ged': ged})).gedcomName,
-    ).toBe('my.ged');
-    expect(() => unpackGedzip(zipSync({'a.ged': ged, 'b.ged': ged}))).toThrow(
+      await name({
+        'familia/tree.ged': ged,
+        'familia/old/backup.ged': ged,
+        'familia/.claude/worktrees/x/tree.ged': ged,
+      }),
+    ).toBe('familia/tree.ged');
+    await expect(name({'a.ged': ged, 'b.ged': ged})).rejects.toThrow(
       /no gedcom\.ged/,
     );
   });
 
-  it('ignores directories and the junk of macOS', () => {
-    const unpacked = unpackGedzip(
-      zipSync({
-        'gedcom.ged': strToU8(WITH_PERSON),
-        '__MACOSX/._gedcom.ged': strToU8('x'),
-        'media/.DS_Store': strToU8('x'),
-        'media/a.jpg': strToU8('x'),
-      }),
+  it('ignores directories, the junk of macOS and hidden folders', async () => {
+    const unpacked = await openGedzip(
+      new Blob([
+        zipSync({
+          'gedcom.ged': strToU8(WITH_PERSON),
+          '__MACOSX/._gedcom.ged': strToU8('x'),
+          'media/.DS_Store': strToU8('x'),
+          '.git/objects/pack/p.png': strToU8('x'),
+          'media/a.jpg': strToU8('x'),
+        }),
+      ]),
     );
     expect([...unpacked.files.keys()]).toEqual(['media/a.jpg']);
+  });
+
+  it('finds media relative to a dataset in a folder of the archive', async () => {
+    const text = [
+      '0 HEAD',
+      '1 GEDC',
+      '2 VERS 7.0',
+      '0 @I1@ INDI',
+      '1 OBJE @O1@',
+      '0 @O1@ OBJE',
+      '1 FILE media/a.jpg',
+      '2 FORM image/jpeg',
+      '0 TRLR',
+    ].join('\n');
+    const tree = await load({
+      kind: 'files',
+      files: [
+        file(
+          't.zip',
+          zipSync({
+            'familia/tree.ged': strToU8(text),
+            'familia/media/a.jpg': strToU8('JPEG'),
+          }),
+        ),
+      ],
+    });
+    expect(mediaUrl(tree.media, 'media/a.jpg')).toBe(
+      tree.media.get('familia/media/a.jpg'),
+    );
+  });
+
+  it('does not copy stored photos: they are slices of the archive', async () => {
+    const archive = new Blob([
+      zipSync(
+        {'gedcom.ged': strToU8(WITH_PERSON), 'media/a.jpg': strToU8('JPEG')},
+        {level: 0},
+      ),
+    ]);
+    const opened = await openGedzip(archive);
+    const photo = opened.files.get('media/a.jpg')!;
+    expect(photo.type).toBe('image/jpeg');
+    expect(await photo.text()).toBe('JPEG');
   });
 
   it('reports archives without a dataset and damaged archives', async () => {
