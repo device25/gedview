@@ -7,7 +7,7 @@ export {
   revokeTreeMedia,
 } from './loader';
 export type {LoaderDeps} from './loader';
-export {looksLikeZip, unpackGedzip} from './zip';
+export {looksLikeZip, openGedzip} from './zip';
 export {
   decodeFilePath,
   isImageFile,
