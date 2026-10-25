@@ -12,6 +12,7 @@ import {treeTitle} from './treeInfo';
 import {UrlDialog} from './UrlDialog';
 import {Workspace} from './Workspace';
 import './shell.css';
+import {droppedFiles} from './folders';
 
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement &&
@@ -75,7 +76,9 @@ function DropOverlay() {
       e.preventDefault();
       depth = 0;
       setOver(false);
-      openFiles(Array.from(e.dataTransfer?.files ?? []));
+      // Entries must be taken during the drop event itself.
+      const data = e.dataTransfer;
+      if (data) void droppedFiles(data).then(openFiles);
     };
     window.addEventListener('dragenter', enter);
     window.addEventListener('dragleave', leave);

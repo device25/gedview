@@ -24,10 +24,10 @@
   "url.invalid": "Enter an address starting with http:// or https://",
   "common.cancel": "Cancel",
   "common.close": "Close",
-  "drop.release": "Drop the file to open it",
+  "drop.release": "Release the file or folder to open it",
   "start.lead": "A viewer for family trees in GEDCOM 7.0 (and 5.5.1): relationship charts, person cards, sources and disputed links.",
-  "start.drop": "Drag a file here or choose one",
-  "start.formats": ".ged, .gdz or .zip; photos can be added along with it",
+  "start.drop": "Drag a file or folder here, or choose one",
+  "start.formats": ".ged, .gdz, .zip or a folder with the tree; photos can be added along with the file",
   "start.privacy": "The file never leaves your browser: it is read right on this page, nothing is sent to a server or stored.",
   "status.loading": "Loading the file…",
   "status.loaded": "Opened the tree “{title}”: {count, plural, one {# person} other {# people}}",
@@ -477,5 +477,6 @@
   "summary.about": "About the file",
   "summary.submitter": "Compiled by {name}",
   "summary.program": "Program: {name}",
-  "source.address": "Address: {address}"
+  "source.address": "Address: {address}",
+  "file.openFolder": "Open folder"
 }

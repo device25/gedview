@@ -85,7 +85,9 @@ function createLoader(deps: LoaderDeps) {
     if (files.length === 0) throw loadError('NOT_GEDCOM', 'No file was given');
     const relative = (f: File) =>
       (
-        (f as File & {webkitRelativePath?: string}).webkitRelativePath || f.name
+        (f as File & {relativePath?: string}).relativePath ||
+        (f as File & {webkitRelativePath?: string}).webkitRelativePath ||
+        f.name
       ).replace(/\\/g, '/');
     // A picked folder: its hidden folders (.git…) and macOS junk are not
     // part of the tree.

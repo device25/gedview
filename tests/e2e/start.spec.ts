@@ -122,9 +122,13 @@ test.describe('start screen', () => {
       return dt;
     });
     await page.dispatchEvent('body', 'dragenter', {dataTransfer: data});
-    await expect(page.getByText('Отпустите файл, чтобы открыть')).toBeVisible();
+    await expect(
+      page.getByText('Отпустите файл или папку, чтобы открыть'),
+    ).toBeVisible();
     await page.dispatchEvent('body', 'drop', {dataTransfer: data});
     await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByText('Отпустите файл, чтобы открыть')).toBeHidden();
+    await expect(
+      page.getByText('Отпустите файл или папку, чтобы открыть'),
+    ).toBeHidden();
   });
 });

@@ -1,0 +1,11 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+0 @I1@ INDI
+1 NAME Анна /Папкина/
+1 SEX F
+1 OBJE @O1@
+0 @O1@ OBJE
+1 FILE media/anna.png
+2 FORM image/png
+0 TRLR
