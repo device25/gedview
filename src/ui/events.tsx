@@ -14,6 +14,7 @@ import {localName} from './lang';
 import {NoteView} from './NoteView';
 import {ExternalIdItem} from './exid';
 import {pickVariant, variantsOf} from './lang';
+import {safeHref} from './html';
 import {PersonLink} from './PersonLink';
 import {isRestricted, type CardEvent, type CitationIndex} from './treeInfo';
 
@@ -218,6 +219,35 @@ export function EventItem({
             {intl.formatMessage({id: 'event.age'}, {age: formatAge(age, intl)})}
           </span>
         )}
+        {e.cause && (
+          <span className="event__line">
+            {intl.formatMessage({id: 'event.cause'}, {text: e.cause})}
+          </span>
+        )}
+        {full && e.agency && (
+          <span className="event__line">
+            {intl.formatMessage({id: 'event.agency'}, {text: e.agency})}
+          </span>
+        )}
+        {full && e.religion && (
+          <span className="event__line">
+            {intl.formatMessage({id: 'event.religion'}, {text: e.religion})}
+          </span>
+        )}
+        {full && e.address && (
+          <span className="event__line">
+            {intl.formatMessage(
+              {id: 'event.address'},
+              {text: e.address.split(/\n+/).filter(Boolean).join(', ')},
+            )}
+          </span>
+        )}
+        {full &&
+          e.contacts?.map((c, i) => (
+            <span key={`c${i}`} className="event__line">
+              <ContactLine kind={c.kind} value={c.value} />
+            </span>
+          ))}
         {e.associations.map((a, i) => (
           <AssociationLine
             key={i}
@@ -251,4 +281,34 @@ export function placeName(place: Place, ui: string): string {
     place.translations,
   );
   return formatPlace(variants[pickVariant(variants, ui)]!.value);
+}
+
+/** A contact of an event (PHON, EMAIL, FAX, WWW): a site is a link. */
+function ContactLine({
+  kind,
+  value,
+}: {
+  kind: 'PHON' | 'EMAIL' | 'FAX' | 'WWW';
+  value: string;
+}) {
+  const intl = useIntl();
+  const label = intl.formatMessage({id: `event.contact.${kind}`});
+  const href = kind === 'WWW' ? safeHref(value) : undefined;
+  return (
+    <>
+      {label}:{' '}
+      {href && /^https?:/.test(href) ? (
+        <a
+          className="link"
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {value} ↗
+        </a>
+      ) : (
+        value
+      )}
+    </>
+  );
 }

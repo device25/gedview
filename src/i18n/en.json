@@ -465,5 +465,13 @@
   "viewer.noPreview": "No preview",
   "source.kept": "Kept at: {where}",
   "source.call": "call number {calls}",
-  "full.aboutFamily": "About the family"
+  "full.aboutFamily": "About the family",
+  "event.cause": "Cause: {text}",
+  "event.agency": "Agency: {text}",
+  "event.religion": "Religion: {text}",
+  "event.address": "Address: {text}",
+  "event.contact.PHON": "Phone",
+  "event.contact.EMAIL": "Email",
+  "event.contact.FAX": "Fax",
+  "event.contact.WWW": "Website"
 }

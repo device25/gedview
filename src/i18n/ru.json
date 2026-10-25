@@ -465,5 +465,13 @@
   "viewer.noPreview": "Предпросмотра нет",
   "source.kept": "Хранится: {where}",
   "source.call": "шифр {calls}",
-  "full.aboutFamily": "О семье"
+  "full.aboutFamily": "О семье",
+  "event.cause": "Причина: {text}",
+  "event.agency": "Учреждение: {text}",
+  "event.religion": "Вероисповедание: {text}",
+  "event.address": "Адрес: {text}",
+  "event.contact.PHON": "Телефон",
+  "event.contact.EMAIL": "Почта",
+  "event.contact.FAX": "Факс",
+  "event.contact.WWW": "Сайт"
 }
