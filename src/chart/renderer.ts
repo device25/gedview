@@ -17,7 +17,7 @@ import type {ChartSettings, IndiView, LoadedTree} from '../gedcom/types';
 import {displayName, initials, lifeSpan} from '../ui/format';
 import {familyBox, marriageOrder} from './family';
 import {cropBox, photoOf, type Photo} from './photo';
-import {wrapName, type Measure} from './text';
+import {wrapLife, wrapName, type Measure} from './text';
 import {
   birthYear,
   decadeFill,
@@ -44,6 +44,7 @@ const NAME_TOP = PAD + PHOTO + 10 + 14; // baseline of the first name line
 const NAME_LINE = 18.5;
 /** Life dates are set at 13px regular; `measure` is the 15px medium name font. */
 const LIFE_SCALE = 0.85;
+const LIFE_LINE = 16;
 /** Numbers the portraits' clip paths: each needs an id of its own. */
 let clipCount = 0;
 
@@ -293,11 +294,23 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     if (tags.length)
       g.attr('aria-label', [g.attr('aria-label'), ...tags].join(', '));
     if (life) {
-      g.append('text')
-        .attr('class', 'gv-life')
-        .attr('x', PAD)
-        .attr('y', NAME_TOP + (lines.length - 1) * NAME_LINE + 3 + 16)
-        .text(` ${life}`);
+      // Dates still too wide take a second line under a one-line name.
+      const lifeLines = wrapLife(
+        life,
+        maxText / LIFE_SCALE,
+        this.ctx.measure,
+        lines.length === 1 ? 2 : 1,
+      );
+      lifeLines.forEach((line, i) => {
+        g.append('text')
+          .attr('class', 'gv-life')
+          .attr('x', PAD)
+          .attr(
+            'y',
+            NAME_TOP + (lines.length - 1) * NAME_LINE + 19 + i * LIFE_LINE,
+          )
+          .text(` ${line}`);
+      });
     }
     // Last in the box, so the text reads in the order of the accessible
     // name; drawn in the portrait row so the card keeps its height.

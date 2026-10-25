@@ -82,3 +82,31 @@ export function wrapName(
   }
   return lines.length ? lines : [''];
 }
+
+/** The dash between birth and death when either side has spaces: a
+ *  no-break space before it, a space after (see joinRange). */
+const DASH = /\u00a0(\S+) /;
+
+/**
+ * Life dates in at most `maxLines` lines of at most `max` pixels. Too long
+ * for a line, they break after the dash, birth above and death below; with
+ * one line only, the birth stays and an ellipsis stands for the rest.
+ */
+export function wrapLife(
+  life: string,
+  max: number,
+  measure: Measure,
+  maxLines: number,
+): string[] {
+  if (measure(life) <= max) return [life];
+  const m = DASH.exec(life);
+  if (m) {
+    const birth = `${life.slice(0, m.index)}\u00a0${m[1]}`;
+    const death = life.slice(m.index + m[0].length);
+    if (maxLines > 1 && measure(birth) <= max && measure(death) <= max)
+      return [birth, death];
+    if (maxLines === 1 && measure(`${birth} ${ELLIPSIS}`) <= max)
+      return [`${birth} ${ELLIPSIS}`];
+  }
+  return wrapName(life, max, measure, maxLines);
+}
