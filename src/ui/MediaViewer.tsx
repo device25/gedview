@@ -82,6 +82,11 @@ export function MediaViewer() {
               <header className="viewer__bar">
                 <div className="viewer__caption">
                   <span className="viewer__title">{entry.title}</span>
+                  {entry.media.notes?.[0] && (
+                    <span className="viewer__note">
+                      {entry.media.notes[0].text}
+                    </span>
+                  )}
                   {count > 1 && (
                     <span className="viewer__count">
                       {intl.formatMessage(

@@ -10,7 +10,7 @@ import {
   SearchField,
 } from 'react-aria-components';
 import {useIntl} from 'react-intl';
-import type {ChartSettings} from '../gedcom/types';
+import type {ChartSettings, SourceView} from '../gedcom/types';
 import {languages} from '../i18n';
 import {useAppState, useDispatch} from '../store';
 import type {ThemePref} from '../store/persist';
@@ -24,6 +24,7 @@ import {eventLabel} from './events';
 import {listSources, sourceFacts} from './treeInfo';
 import {SourceFactsLine} from './cite';
 import {NoteView} from './NoteView';
+import {safeHref} from './html';
 
 export function PeoplePanel() {
   const {peopleCheck} = useAppState();
@@ -177,6 +178,7 @@ function SourceEntry({id, title}: {id: string; title: string}) {
     (!!facts.author ||
       !!facts.publication ||
       facts.kept.length > 0 ||
+      !!view?.repositories.some((r) => r.address || r.websites?.length) ||
       !!view?.text ||
       (view?.notes.length ?? 0) > 0);
   if (!more) {
@@ -196,6 +198,9 @@ function SourceEntry({id, title}: {id: string; title: string}) {
         </summary>
         <div className="source-list__body">
           <SourceFactsLine facts={facts} />
+          {view?.repositories.map((r, i) => (
+            <ArchiveDetails key={`r${i}`} repo={r} />
+          ))}
           {view?.text && <NoteView note={view.text} quote />}
           {view?.notes.map((n, i) => (
             <NoteView key={i} note={n} />
@@ -203,6 +208,42 @@ function SourceEntry({id, title}: {id: string; title: string}) {
         </div>
       </details>
     </li>
+  );
+}
+
+/** Where an archive is and its site and notes, from its REPO record. */
+function ArchiveDetails({repo}: {repo: SourceView['repositories'][number]}) {
+  const intl = useIntl();
+  if (!repo.address && !repo.websites?.length && !repo.repoNotes?.length)
+    return null;
+  return (
+    <div className="source-list__archive">
+      {repo.name && <span>{repo.name}</span>}
+      {repo.address && (
+        <span className="muted">
+          {intl.formatMessage({id: 'source.address'}, {address: repo.address})}
+        </span>
+      )}
+      {repo.websites?.map((w, i) => {
+        const href = safeHref(w);
+        return href && /^https?:/.test(href) ? (
+          <a
+            key={i}
+            className="link"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {w.replace(/^https?:\/\//, '').replace(/\/$/, '')} ↗
+          </a>
+        ) : (
+          <span key={i}>{w}</span>
+        );
+      })}
+      {repo.repoNotes?.map((n, i) => (
+        <NoteView key={i} note={n} />
+      ))}
+    </div>
   );
 }
 

@@ -91,10 +91,14 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
     [indi, hide],
   );
   const media = splitByResn(indi.media, (m) => m, hide);
-  const entries = mediaEntries(tree, indi, {
-    hide,
-    allowRemote: settings.loadRemoteMedia,
-  });
+  const entries = useMemo(
+    () =>
+      mediaEntries(tree, indi, {
+        hide,
+        allowRemote: settings.loadRemoteMedia,
+      }),
+    [tree, indi, hide, settings.loadRemoteMedia],
+  );
   const hiddenRecords = [
     ...events.hidden.map((i) => i.event),
     ...notes.hidden.map(restrictionsOf),
@@ -155,8 +159,12 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
     });
     // The person's notes, as shown (restricted ones only when revealed).
     ofNotes(notes.visible);
+    entries.forEach(({media}) => {
+      ofNotes(media.notes ?? []);
+      add(media.citations ?? []);
+    });
     return idx;
-  }, [indi, noEvents, events, notes, rel, shownFamily]);
+  }, [indi, noEvents, events, notes, rel, shownFamily, entries]);
 
   const name = localName(indi, lang, fileLang);
   const life = lifeSpan(indi, dateOpts);
@@ -368,6 +376,7 @@ function FullCardBody({tree, indi}: {tree: LoadedTree; indi: IndiView}) {
           <MediaItem
             key={i}
             entry={e}
+            sources={index}
             onView={() =>
               dispatch({
                 type: 'openViewer',
@@ -591,7 +600,15 @@ function ChildLine({
   );
 }
 
-function MediaItem({entry, onView}: {entry: MediaEntry; onView: () => void}) {
+function MediaItem({
+  entry,
+  onView,
+  sources,
+}: {
+  entry: MediaEntry;
+  onView: () => void;
+  sources: CitationIndex;
+}) {
   const intl = useIntl();
   const [failed, setFailed] = useState(false);
   const {media, file, src, remote, image, title} = entry;
@@ -653,6 +670,15 @@ function MediaItem({entry, onView}: {entry: MediaEntry; onView: () => void}) {
             {intl.formatMessage({id: 'media.open'})} ↗
           </a>
         )}
+        {media.notes?.map((n, k) => (
+          <NoteView key={k} note={n} sources={sources} />
+        ))}
+        {(media.citations?.length ?? 0) > 0 && (
+          <CiteRefs citations={media.citations!} index={sources} />
+        )}
+        {media.exids?.map((x, k) => (
+          <ExternalIdItem key={`x${k}`} id={x} compact />
+        ))}
       </div>
     </div>
   );
