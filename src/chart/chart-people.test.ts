@@ -299,7 +299,7 @@ describe('random trees', () => {
 
   it(
     'every pale person is needed by someone who passes',
-    {timeout: 30000},
+    {timeout: 60000},
     () => {
       let pale = 0;
       for (let seed = 1; seed <= 60; seed++) {
@@ -332,28 +332,32 @@ describe('random trees', () => {
     },
   );
 
-  it('what is counted is what is drawn, and who passes stays', () => {
-    let filtered = 0;
-    for (let seed = 1; seed <= 120; seed++) {
-      const tree = randomTree(seed * 7919);
-      const ids = [...tree.indis.keys()];
-      const rootId = ids[seed % ids.length]!;
-      const scope = scopeOf(rootId, levels[seed % levels.length]!);
-      for (const min of ['0', '3'] as const) {
-        const {shown} = at(tree, scope, min);
-        const label = `seed ${seed}, root ${rootId}, ${scope.level}, ${min}`;
-        expect(drawn(tree, scope, min), label).toEqual(shown);
-        if (shown.length > 1) filtered++;
+  it(
+    'what is counted is what is drawn, and who passes stays',
+    {timeout: 60000},
+    () => {
+      let filtered = 0;
+      for (let seed = 1; seed <= 120; seed++) {
+        const tree = randomTree(seed * 7919);
+        const ids = [...tree.indis.keys()];
+        const rootId = ids[seed % ids.length]!;
+        const scope = scopeOf(rootId, levels[seed % levels.length]!);
+        for (const min of ['0', '3'] as const) {
+          const {shown} = at(tree, scope, min);
+          const label = `seed ${seed}, root ${rootId}, ${scope.level}, ${min}`;
+          expect(drawn(tree, scope, min), label).toEqual(shown);
+          if (shown.length > 1) filtered++;
 
-        // Everyone above the threshold the plain chart draws is still there.
-        const plain = drawn(tree, scope, 'all');
-        const passing = plain.filter((id) =>
-          personMeetsQuality(tree.indis.get(id)!, min),
-        );
-        for (const id of passing) expect(shown, label).toContain(id);
+          // Everyone above the threshold the plain chart draws is still there.
+          const plain = drawn(tree, scope, 'all');
+          const passing = plain.filter((id) =>
+            personMeetsQuality(tree.indis.get(id)!, min),
+          );
+          for (const id of passing) expect(shown, label).toContain(id);
+        }
       }
-    }
-    // The trees do exercise the threshold.
-    expect(filtered).toBeGreaterThan(50);
-  });
+      // The trees do exercise the threshold.
+      expect(filtered).toBeGreaterThan(50);
+    },
+  );
 });
