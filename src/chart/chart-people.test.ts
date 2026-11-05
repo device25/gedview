@@ -137,6 +137,37 @@ describe('the threshold follows what topola draws', () => {
     }
   });
 
+  it('leaves out a parent the other one can do without', () => {
+    // Either parent links R and S, but only the mother leads up to GM.
+    const tree = kin(
+      [
+        {husb: 'FA', wife: 'MO', kids: ['R', 'S']},
+        {husb: 'GM', kids: ['MO']},
+      ],
+      {R: 3, S: 3, GM: 3},
+    );
+    expect(at(tree, scopeOf('R'), '3')).toEqual({
+      shown: ['GM', 'MO', 'R', 'S'],
+      dimmed: ['MO'],
+    });
+    expect(drawn(tree, scopeOf('R'), '3')).toEqual(['GM', 'MO', 'R', 'S']);
+  });
+
+  it('keeps both parents when each leads up to someone', () => {
+    const tree = kin(
+      [
+        {husb: 'FA', wife: 'MO', kids: ['R', 'S']},
+        {husb: 'GF', kids: ['FA']},
+        {husb: 'GM', kids: ['MO']},
+      ],
+      {R: 3, S: 3, GF: 3, GM: 3},
+    );
+    expect(at(tree, scopeOf('R'), '3').dimmed).toEqual(['FA', 'MO']);
+    expect(drawn(tree, scopeOf('R'), '3')).toEqual(
+      ['FA', 'GF', 'GM', 'MO', 'R', 'S'].sort(),
+    );
+  });
+
   it('keeps nobody for the sake of someone the chart never draws', () => {
     // The chart doesn't show an ancestor's other marriages, so HS can't be
     // reached, with or without the threshold.
@@ -265,6 +296,41 @@ describe('random trees', () => {
   }
 
   const levels: BreadthLevel[] = ['direct', 'siblings', 'cousins1', 'all'];
+
+  it(
+    'every pale person is needed by someone who passes',
+    {timeout: 30000},
+    () => {
+      let pale = 0;
+      for (let seed = 1; seed <= 60; seed++) {
+        const tree = randomTree(seed * 104729);
+        const ids = [...tree.indis.keys()];
+        const rootId = ids[seed % ids.length]!;
+        // With its other marriages gone, a root's chart climbs to the parents
+        // of the spouse left: a way the threshold doesn't count on.
+        if (tree.indis.get(rootId)!.fams.length > 1) continue;
+        const scope = scopeOf(rootId, levels[seed % levels.length]!);
+        const settings = {...SETTINGS, minSourceQuality: '3' as const};
+        const {keep, shown, dimmed} = chartPeople(tree, settings, scope);
+        const passing = [...shown].filter((id) => !dimmed.has(id));
+        for (const id of dimmed) {
+          if (id === rootId) continue;
+          pale++;
+          const only = new Set(shown);
+          only.delete(id);
+          const d = drawChart(tree, 'relatives', rootId, settings, {
+            keep,
+            only,
+          });
+          const lost = passing.filter(
+            (p) => !d.svg.querySelector(`g.gv-person[data-id="${p}"]`),
+          );
+          expect(lost.length, `seed ${seed}, ${id}`).toBeGreaterThan(0);
+        }
+      }
+      expect(pale).toBeGreaterThan(20);
+    },
+  );
 
   it('what is counted is what is drawn, and who passes stays', () => {
     let filtered = 0;

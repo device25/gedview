@@ -209,3 +209,55 @@ test('a selected person the threshold hides leaves the root in view', async ({
   await expect(page.locator('g.gv-person')).toHaveCount(1);
   await expect(box(page, 'R')).toBeInViewport();
 });
+
+test('fitting a chart too wide to fit keeps the root in view', async ({
+  page,
+}) => {
+  // Отец with 420 children, all above the threshold but the one selected; the
+  // root is the first of them, away from the middle.
+  const kids = Array.from({length: 420}, (_, i) => `K${i}`);
+  const cited = ['1 BIRT', '2 SOUR @S1@', '3 QUAY 3'];
+  const ged = [
+    '0 HEAD',
+    '1 GEDC',
+    '2 VERS 7.0',
+    '0 @S1@ SOUR',
+    '1 TITL Книга',
+    '0 @P@ INDI',
+    '1 NAME Отец',
+    '1 FAMS @F@',
+    ...cited,
+    '0 @X@ INDI',
+    '1 NAME Без источника',
+    '1 FAMC @F@',
+    '0 @F@ FAM',
+    '1 HUSB @P@',
+    '1 CHIL @X@',
+    ...kids.map((k) => `1 CHIL @${k}@`),
+    ...kids.flatMap((k) => [
+      `0 @${k}@ INDI`,
+      `1 NAME ${k}`,
+      '1 FAMC @F@',
+      ...cited,
+    ]),
+    '0 TRLR',
+    '',
+  ].join('\n');
+  await page.goto('/#id=X&root=K0&level=siblings');
+  await page.getByTestId('file-input').setInputFiles({
+    name: 'wider.ged',
+    mimeType: 'text/plain',
+    buffer: Buffer.from(ged),
+  });
+  await expect(box(page, 'X')).toBeAttached();
+
+  await setThreshold(page, '3');
+  await expect(box(page, 'X')).toHaveCount(0);
+  await expect(box(page, 'K0')).toBeInViewport();
+  await page.getByRole('button', {name: /вписать в экран/}).click();
+  // Once the view has moved, at the smallest scale.
+  await expect
+    .poll(async () => (await box(page, 'K0').boundingBox())?.width)
+    .toBeLessThan(20);
+  await expect(box(page, 'K0')).toBeInViewport();
+});

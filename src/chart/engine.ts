@@ -269,8 +269,10 @@ export class ChartEngine {
     this.pendingFit = false;
     const {k, exact} = fitScale(this.chartSize, this.size, ZOOM_MIN, FIT_MAX);
     // A chart too big for the smallest scale is shown around the selected
-    // person rather than around its middle.
-    const focus = this.boxes.find((b) => b.key === this.selectedKey);
+    // person, or the root if they aren't on it, rather than around its middle.
+    const focus = this.boxes.find(
+      (b) => b.key === (this.selectedKey ?? this.rootKey),
+    );
     const [cx, cy] =
       exact || !focus
         ? [this.chartSize.w / 2, this.chartSize.h / 2]
