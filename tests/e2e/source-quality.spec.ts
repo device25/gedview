@@ -155,3 +155,57 @@ test.describe('reliability threshold', () => {
       .toContain('"minSourceQuality":"3"');
   });
 });
+
+test('a selected person the threshold hides leaves the root in view', async ({
+  page,
+}) => {
+  // Р (QUAY 3) with six children of six children each: the grandchild picked
+  // is far from the root, and has no citation.
+  const kids = Array.from({length: 6}, (_, i) => `K${i}`);
+  const grandkids = (k: string) =>
+    Array.from({length: 6}, (_, i) => `${k}G${i}`);
+  const ged = [
+    '0 HEAD',
+    '1 GEDC',
+    '2 VERS 7.0',
+    '0 @S1@ SOUR',
+    '1 TITL Книга',
+    '0 @R@ INDI',
+    '1 NAME Корень',
+    '1 FAMS @F@',
+    '1 BIRT',
+    '2 SOUR @S1@',
+    '3 QUAY 3',
+    '0 @F@ FAM',
+    '1 HUSB @R@',
+    ...kids.map((k) => `1 CHIL @${k}@`),
+    ...kids.flatMap((k) => [
+      `0 @${k}@ INDI`,
+      `1 NAME ${k}`,
+      '1 FAMC @F@',
+      `1 FAMS @F${k}@`,
+      `0 @F${k}@ FAM`,
+      `1 HUSB @${k}@`,
+      ...grandkids(k).map((g) => `1 CHIL @${g}@`),
+      ...grandkids(k).flatMap((g) => [
+        `0 @${g}@ INDI`,
+        `1 NAME ${g}`,
+        `1 FAMC @F${k}@`,
+      ]),
+    ]),
+    '0 TRLR',
+    '',
+  ].join('\n');
+  await page.goto('/#id=K5G5&root=R');
+  await page.getByTestId('file-input').setInputFiles({
+    name: 'wide.ged',
+    mimeType: 'text/plain',
+    buffer: Buffer.from(ged),
+  });
+  await expect(box(page, 'K5G5')).toBeInViewport();
+
+  await setThreshold(page, '3');
+  await expect(box(page, 'K5G5')).toHaveCount(0);
+  await expect(page.locator('g.gv-person')).toHaveCount(1);
+  await expect(box(page, 'R')).toBeInViewport();
+});

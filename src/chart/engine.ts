@@ -161,6 +161,7 @@ export class ChartEngine {
   private pills = new Map<string, SVGGElement>();
   private tabKey?: string;
   private selectedKey?: string;
+  private rootKey?: string;
 
   constructor(
     private readonly svgEl: SVGSVGElement,
@@ -309,9 +310,9 @@ export class ChartEngine {
       this.pills.clear();
       // One layout for every level: topola's relatives chart, fed with the
       // people of the scope only.
-      const {keep, shown, dimmed} = chartPeople(tree, settings, scope);
+      const {keep, only, dimmed} = chartPeople(tree, settings, scope);
       this.data = new JsonDataProvider(
-        buildChartData(tree, settings, {keep, only: shown}),
+        buildChartData(tree, settings, {keep, only}),
       );
       const ctx: RendererContext = {
         tree,
@@ -351,13 +352,16 @@ export class ChartEngine {
 
     const origin = info.origin;
     this.origin = origin;
-    const links = this.collect(renderer, origin);
+    const links = this.collect(renderer, origin, scope.rootId);
     this.annotate(links, input);
     this.styleLinks(input);
     this.routeCopies(renderer);
     this.laneBars();
 
-    const target = this.boxes.find((b) => b.key === this.selectedKey);
+    // Someone the chart leaves out has no box: the view goes to the root.
+    const target = this.boxes.find(
+      (b) => b.key === (this.selectedKey ?? this.rootKey),
+    );
     if (target) {
       const t = centerXform(target.cx, target.cy, this.goal.k, this.size);
       this.moveTo(t, animate ? MOVE_TIME_MS : 0, animate ? HIDE_TIME_MS : 0);
@@ -394,6 +398,7 @@ export class ChartEngine {
   private collect(
     renderer: GedviewRenderer,
     origin: [number, number],
+    rootId: string,
   ): ChildLink[] {
     const [ox, oy] = origin;
     this.boxes = [];
@@ -435,16 +440,21 @@ export class ChartEngine {
         const key = el.dataset.key;
         if (key) this.elements.set(key, el);
       });
-    // The selected person's box: the one nearest the chart's root.
-    let best = Infinity;
-    this.selectedKey = undefined;
-    for (const [key, id] of ids) {
-      const g = generations.get(key)!;
-      if (id === this.currentSelected && g < best) {
-        best = g;
-        this.selectedKey = key;
+    // A person's box: the one nearest the chart's root.
+    const boxOf = (person: string | undefined) => {
+      let best = Infinity;
+      let found: string | undefined;
+      for (const [key, id] of ids) {
+        const g = generations.get(key)!;
+        if (id === person && g < best) {
+          best = g;
+          found = key;
+        }
       }
-    }
+      return found;
+    };
+    this.selectedKey = boxOf(this.currentSelected);
+    this.rootKey = boxOf(rootId);
     return links;
   }
 

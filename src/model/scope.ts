@@ -141,16 +141,105 @@ export const scopeCount = (tree: LoadedTree, people: ReadonlySet<string>) =>
 export interface ChartPeople {
   /** Blood relatives of the root within the scope. */
   keep: Set<string>;
-  /** Everyone drawn. */
+  /** Everyone counted as drawn. */
   shown: Set<string>;
   /** Drawn although below the threshold: the root, and those who link
    *  someone shown to the root. */
   dimmed: Set<string>;
+  /** The limit for the chart's data; none at «all», where it is as it was. */
+  only: Set<string> | undefined;
+}
+
+/** A place on the chart, and where topola's walk goes on from it. */
+interface Stop {
+  key: string;
+  /** The person drawn there; going on to a family's children draws nobody. */
+  indi?: string;
+  next: () => Stop[];
+}
+
+/** The start of the way topola's relatives chart walks the data, which is
+ *  narrower than the links in it. Going down, a person brings their spouses,
+ *  who go no further, and their children. Going up, a person's parents bring
+ *  their parents and their other children, but no other marriages; the child
+ *  they were come up from is left out of all that lies below them, adopted
+ *  or not. Besides the root's, only the parents of an only spouse are climbed
+ *  to. */
+function chartWalk(
+  tree: LoadedTree,
+  settings: ChartSettings,
+  keep: ReadonlySet<string>,
+  drawn: ReadonlySet<string>,
+  rootId: string,
+): Stop {
+  const {children, famc} = parentGraph(tree, settings);
+  const kept = (famId: string) =>
+    !!tree.fams
+      .get(famId)
+      ?.partners.some((p) => p.indiId && keep.has(p.indiId));
+  const couple = (famId: string) =>
+    (['HUSB', 'WIFE'] as const).flatMap((role) => {
+      const id = tree.fams
+        .get(famId)
+        ?.partners.find((p) => p.role === role)?.indiId;
+      return id && drawn.has(id) ? [id] : [];
+    });
+  const kids = (famId: string) =>
+    (children.get(famId) ?? []).filter((id) => drawn.has(id));
+  const marriages = (id: string) => tree.indis.get(id)!.fams.filter(kept);
+
+  const down = (id: string, without?: string): Stop => ({
+    key: `down:${id}:${without}`,
+    indi: id,
+    next: () =>
+      marriages(id).flatMap((famId) => [
+        ...couple(famId)
+          .filter((p) => p !== id)
+          .map((p) => ({key: `spouse:${p}`, indi: p, next: () => []})),
+        ...kids(famId)
+          .filter((kid) => kid !== without)
+          .map((kid) => down(kid, without)),
+      ]),
+  });
+  const up = (child: string): Stop[] => {
+    const famId = famc.get(child);
+    if (famId === undefined || !kept(famId)) return [];
+    const others: Stop = {
+      key: `others:${famId}:${child}`,
+      next: () =>
+        kids(famId)
+          .filter((id) => id !== child)
+          .map((id) => down(id, child)),
+    };
+    return couple(famId).map((parent) => ({
+      key: `up:${famId}:${child}:${parent}`,
+      indi: parent,
+      next: () => [...up(parent), others],
+    }));
+  };
+  const onlySpouse = (id: string): string[] => {
+    const fams = marriages(id);
+    return fams.length === 1 ? couple(fams[0]!).filter((p) => p !== id) : [];
+  };
+  const root = down(rootId);
+  return {
+    ...root,
+    next: () => [
+      ...root.next(),
+      ...up(rootId),
+      ...onlySpouse(rootId).map((id) => ({
+        key: `root-spouse:${id}`,
+        indi: id,
+        next: () => up(id),
+      })),
+    ],
+  };
 }
 
 /** Applies the threshold to the people of a scope: those below it go, unless
- *  a branch would come apart without them. Paths run over the links the chart
- *  draws, marriages included, so a spouse above the threshold stays too. */
+ *  a branch would come apart without them. Each person is reached along the
+ *  chart's walk by the way with the fewest people below the threshold, so
+ *  nobody stays who isn't needed. */
 export function chartPeople(
   tree: LoadedTree,
   settings: ChartSettings,
@@ -159,51 +248,53 @@ export function chartPeople(
   const keep = scopePeople(tree, settings, scope);
   const shown = scopeDrawn(tree, keep);
   const min = settings.minSourceQuality;
-  if (min === 'all' || shown.size === 0)
-    return {keep, shown, dimmed: new Set()};
+  if (min === 'all') return {keep, shown, dimmed: new Set(), only: undefined};
+  if (shown.size === 0) return {keep, shown, dimmed: new Set(), only: shown};
 
-  const {children} = parentGraph(tree, settings);
-  const links = new Map<string, string[]>();
-  const link = (a: string, b: string) => {
-    links.set(a, [...(links.get(a) ?? []), b]);
-    links.set(b, [...(links.get(b) ?? []), a]);
+  const passing = new Map<string, boolean>();
+  const passes = (id: string) => {
+    let yes = passing.get(id);
+    if (yes === undefined) {
+      const indi = tree.indis.get(id);
+      yes = !!indi && personMeetsQuality(indi, min);
+      passing.set(id, yes);
+    }
+    return yes;
   };
-  for (const fam of tree.fams.values()) {
-    const partners = fam.partners.flatMap((p) => (p.indiId ? [p.indiId] : []));
-    if (!partners.some((id) => keep.has(id))) continue;
-    partners.forEach((a, i) => {
-      for (const b of partners.slice(i + 1)) link(a, b);
-      for (const kid of children.get(fam.id) ?? [])
-        if (shown.has(kid)) link(a, kid);
-    });
-  }
 
-  // Breadth-first from the root: each person's way back to it.
-  const cameFrom = new Map<string, string | undefined>([
-    [scope.rootId, undefined],
-  ]);
-  const queue = [scope.rootId];
-  for (let i = 0; i < queue.length; i++) {
-    for (const next of links.get(queue[i]!) ?? []) {
-      if (cameFrom.has(next)) continue;
-      cameFrom.set(next, queue[i]);
-      queue.push(next);
+  // Cheapest ways first: a stop with someone below the threshold costs one.
+  const cameFrom = new Map<string, Stop | undefined>();
+  const firstStop = new Map<string, Stop>();
+  const start = chartWalk(tree, settings, keep, shown, scope.rootId);
+  let layer: Array<[Stop, Stop | undefined]> = [[start, undefined]];
+  while (layer.length > 0) {
+    const dearer: typeof layer = [];
+    for (let i = 0; i < layer.length; i++) {
+      const [stop, from] = layer[i]!;
+      if (cameFrom.has(stop.key)) continue;
+      cameFrom.set(stop.key, from);
+      if (stop.indi && !firstStop.has(stop.indi))
+        firstStop.set(stop.indi, stop);
+      for (const next of stop.next()) {
+        if (cameFrom.has(next.key)) continue;
+        const free = next.indi === undefined || passes(next.indi);
+        (free ? layer : dearer).push([next, stop]);
+      }
     }
+    layer = dearer;
   }
 
-  const passing = [...shown].filter((id) => {
-    const indi = tree.indis.get(id);
-    return !!indi && personMeetsQuality(indi, min);
-  });
   const kept = new Set([scope.rootId]);
-  for (const id of passing) {
-    let at: string | undefined = id;
-    while (at !== undefined && !kept.has(at)) {
-      kept.add(at);
-      at = cameFrom.get(at);
+  const walked = new Set<string>();
+  for (const [id, first] of firstStop) {
+    if (!passes(id)) continue;
+    let at: Stop | undefined = first;
+    while (at && !walked.has(at.key)) {
+      walked.add(at.key);
+      if (at.indi) kept.add(at.indi);
+      at = cameFrom.get(at.key);
     }
   }
-  const dimmed = new Set(kept);
-  for (const id of passing) dimmed.delete(id);
-  return {keep, shown: kept, dimmed};
+  const dimmed = new Set([...kept].filter((id) => !passes(id)));
+  return {keep, shown: kept, dimmed, only: kept};
 }
