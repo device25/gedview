@@ -36,7 +36,7 @@
     "react-dom": "^19.3.1",
     "react-intl": "^12.1.5",
     "topojson-client": "^3.1.0",
-    "topola": "^3.10.4",
+    "topola": "^3.10.5",
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
