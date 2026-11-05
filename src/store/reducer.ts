@@ -1,5 +1,5 @@
 import type {ChartSettings, LoadedTree, LoadErrorCode} from '../gedcom/types';
-import {MIN_UP, scopeDrawn, scopePeople, type ChartScope} from '../model/scope';
+import {MIN_UP, chartPeople, type ChartScope} from '../model/scope';
 import {DEFAULT_SETTINGS, type Persisted, type ThemePref} from './persist';
 import type {CheckId} from '../model/checks';
 import {DEFAULT_SCOPE, type HashState, type ScopeShape} from './hash';
@@ -128,8 +128,7 @@ export function chartScope(state: AppState): ChartScope | undefined {
 function onChart(state: AppState, id: string): boolean {
   const scope = chartScope(state);
   if (!state.tree || !scope) return false;
-  const people = scopePeople(state.tree, state.settings, scope);
-  return scopeDrawn(state.tree, people).has(id);
+  return chartPeople(state.tree, state.settings, scope).shown.has(id);
 }
 
 /** The person to show first: the wanted one if it exists, else the first. */

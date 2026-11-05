@@ -63,6 +63,10 @@ CI workflow manually with `update_snapshots` enabled and commit the
   shows (`#id=I5&root=I1&level=siblings&up=3&down=2`): the selected person,
   the person the chart counts from, the level of kinship and the generations
   up and down.
+- Settings can limit the chart by source reliability (`QUAY`): people with no
+  citation of their own at that level are hidden, and those who link the rest
+  to the root stay, drawn pale. A citation without `QUAY` counts only at
+  "All", the default. Person cards always list every source.
 - Keys: `/` — find a person, `Esc` — close a panel or the card. On the
   chart: arrows move between relatives (Up/Down parents and children,
   Left/Right spouse and siblings), `Enter` or `Space` selects; the mouse

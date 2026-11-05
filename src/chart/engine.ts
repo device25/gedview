@@ -14,7 +14,7 @@ import {
 import {dateSortKey} from '../gedcom/date';
 import type {ChartSettings, LoadedTree} from '../gedcom/types';
 import {buildChartData} from '../model/chart';
-import {scopePeople, type ChartScope} from '../model/scope';
+import {chartPeople, type ChartScope} from '../model/scope';
 import {ZOOM_MAX, ZOOM_MIN} from '../store/reducer';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {isNavKey, navigate, type NavBox, type NavEdge} from './nav';
@@ -309,8 +309,10 @@ export class ChartEngine {
       this.pills.clear();
       // One layout for every level: topola's relatives chart, fed with the
       // people of the scope only.
-      const keep = scopePeople(tree, settings, scope);
-      this.data = new JsonDataProvider(buildChartData(tree, settings, {keep}));
+      const {keep, shown, dimmed} = chartPeople(tree, settings, scope);
+      this.data = new JsonDataProvider(
+        buildChartData(tree, settings, {keep, only: shown}),
+      );
       const ctx: RendererContext = {
         tree,
         settings,
@@ -318,6 +320,7 @@ export class ChartEngine {
         measure: canvasMeasure(`500 15px ${FONT_FAMILY}`, 15),
         selectedId: () => this.currentSelected,
         rootId: scope.rootId,
+        dimmed,
       };
       this.renderer = new GedviewRenderer(
         {data: this.data, horizontal: false},

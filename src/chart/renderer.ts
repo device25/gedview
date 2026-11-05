@@ -57,6 +57,8 @@ export interface RendererContext {
   selectedId: () => string;
   /** The person the chart counts from; marked on their box. */
   rootId?: string;
+  /** Drawn pale: below the reliability threshold, kept to link the others. */
+  dimmed?: ReadonlySet<string>;
 }
 
 /** How a person is drawn and announced; independent of where. */
@@ -189,10 +191,11 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     const {settings} = this.ctx;
     const look = this.look(id);
     const selected = id === this.ctx.selectedId();
+    const dimmed = !!this.ctx.dimmed?.has(id);
     const inset = COUPLE_GAP / 2;
     const g = parent
       .append('g')
-      .attr('class', 'gv-person')
+      .attr('class', dimmed ? 'gv-person gv-dimmed' : 'gv-person')
       .attr('transform', `translate(${x + inset} 0)`)
       .attr('data-id', id)
       .attr('data-key', `${nodeId}:${role}`)
@@ -220,7 +223,7 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
       .attr('width', BOX_W)
       .attr('height', BOX_H)
       .attr('rx', 14)
-      .style('fill', () => this.fillOf(id));
+      .style('fill', () => (dimmed ? null : this.fillOf(id)));
 
     const photo = photoOf(this.ctx.tree.indis.get(id), this.ctx.tree, {
       allowRemote: settings.loadRemoteMedia,
@@ -229,7 +232,7 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     const sexClass = settings.sexColors && look.sex ? ` gv-${look.sex}` : '';
     // Drawn beside the button, not inside it: the initials are not part of
     // the accessible name, and clicks go through to the card underneath.
-    this.portrait(parent, x + inset, id, photo, look.name, sexClass);
+    this.portrait(parent, x + inset, id, photo, look.name, sexClass, dimmed);
     const isRoot = id === this.ctx.rootId;
     if (settings.showIds) {
       // Beside the button too: the id is not part of the person's name.
@@ -265,7 +268,7 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     const nameLayer = cut
       ? parent
           .append('g')
-          .attr('class', 'gv-name-cut')
+          .attr('class', dimmed ? 'gv-name-cut gv-dimmed' : 'gv-name-cut')
           .attr('data-for', id)
           .attr('aria-hidden', 'true')
           .attr('transform', `translate(${x + inset} 0)`)
@@ -293,6 +296,11 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     }
     if (tags.length)
       g.attr('aria-label', [g.attr('aria-label'), ...tags].join(', '));
+    if (dimmed)
+      g.attr(
+        'aria-label',
+        `${g.attr('aria-label')}, ${this.ctx.intl.formatMessage({id: 'chart.dimmed'})}`,
+      );
     if (life) {
       // Dates still too wide take a second line under a one-line name.
       const lifeLines = wrapLife(
@@ -388,11 +396,12 @@ export class GedviewRenderer extends CompositeRenderer implements Renderer {
     photo: Photo | undefined,
     name: string,
     sexClass: string,
+    dimmed: boolean,
   ) {
     const r = PHOTO / 2;
     const p = parent
       .append('g')
-      .attr('class', 'gv-photo')
+      .attr('class', dimmed ? 'gv-photo gv-dimmed' : 'gv-photo')
       .attr('data-for', id)
       .attr('aria-hidden', 'true')
       .attr('transform', `translate(${x + PAD} ${PAD})`);

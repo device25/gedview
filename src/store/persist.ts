@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   // Off: a remote image tells another site who is looking (see the hint).
   loadRemoteMedia: false,
   cardColor: 'none',
+  minSourceQuality: 'all',
 };
 
 const KEYS = {
@@ -63,6 +64,14 @@ export function sanitizeSettings(raw: unknown): ChartSettings {
     r.dateStyle === 'gregorian'
   )
     s.dateStyle = r.dateStyle;
+  if (
+    r.minSourceQuality === 'all' ||
+    r.minSourceQuality === '0' ||
+    r.minSourceQuality === '1' ||
+    r.minSourceQuality === '2' ||
+    r.minSourceQuality === '3'
+  )
+    s.minSourceQuality = r.minSourceQuality;
   return s;
 }
 

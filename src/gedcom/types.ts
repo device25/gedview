@@ -238,6 +238,9 @@ export interface Association {
 /** QUAY 0..3 as in GEDCOM 5.5.1/7.0. */
 export type Quality = 0 | 1 | 2 | 3;
 
+/** The lowest QUAY that counts; 'all' applies no threshold at all. */
+export type MinSourceQuality = 'all' | '0' | '1' | '2' | '3';
+
 export interface Citation {
   /** SOUR record id; undefined for @VOID@ or 5.5.1 inline source. */
   sourceId?: string;
@@ -525,6 +528,8 @@ export interface ChartSettings {
   loadRemoteMedia: boolean;
   /** Colour of the cards: plain, or by decade of birth. */
   cardColor: 'none' | 'decade';
+  /** People drawn on the chart, by the QUAY of their citations. */
+  minSourceQuality: MinSourceQuality;
 }
 
 /** Props of the chart component (part C). */

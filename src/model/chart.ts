@@ -40,6 +40,9 @@ export interface ChartDataOptions {
    *  family stays when one of its partners is kept, so a spouse's other
    *  marriages and parents are left out. Everyone when absent. */
   keep?: ReadonlySet<string>;
+  /** Of those, only these are drawn (the rest are below the reliability
+   *  threshold); a family with nobody left to link goes as well. */
+  only?: ReadonlySet<string>;
   /** Text for a date topola cannot take as numbers (non-Gregorian calendar,
    *  BCE, dual year, or a style that shows both calendars). The default is
    *  English, e.g. "6 Apr 1889 (Julian)". */
@@ -288,7 +291,7 @@ export function buildChartData(
   const format = options.formatDate ?? defaultFormat;
   const style = settings.dateStyle;
   const {children, famc} = parentGraph(tree, settings);
-  const keep = options.keep;
+  const {keep, only} = options;
   const keptFams = new Set<string>();
   const drawn = new Set<string>();
   for (const fam of tree.fams.values()) {
@@ -298,7 +301,17 @@ export function buildChartData(
     for (const p of fam.partners) if (p.indiId) drawn.add(p.indiId);
   }
   const kept = (id: string | undefined): id is string =>
-    id !== undefined && (!keep || keep.has(id) || drawn.has(id));
+    id !== undefined &&
+    (!keep || keep.has(id) || drawn.has(id)) &&
+    (!only || only.has(id));
+  if (only) {
+    for (const famId of keptFams) {
+      const fam = tree.fams.get(famId)!;
+      const partners = fam.partners.filter((p) => kept(p.indiId)).length;
+      const kids = (children.get(famId) ?? []).filter(kept).length;
+      if (partners === 0 || partners + kids < 2) keptFams.delete(famId);
+    }
+  }
   const keptFam = (famId: string) => keptFams.has(famId);
 
   const event = (events: EventDetail[], tag: string) =>

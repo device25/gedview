@@ -6,9 +6,20 @@ import type {
   Citation,
   EventDetail,
   IndiView,
+  MinSourceQuality,
   NoteText,
   Place,
 } from '../gedcom/types';
+
+/** True when the citation counts at this threshold. A citation without
+ *  QUAY has no known reliability, so it passes only 'all'. */
+export function meetsQuality(
+  citation: Pick<Citation, 'quality'>,
+  min: MinSourceQuality,
+): boolean {
+  if (min === 'all') return true;
+  return citation.quality !== undefined && citation.quality >= Number(min);
+}
 
 const ofNotes = (notes: readonly NoteText[]) =>
   notes.flatMap((n) => n.citations);
@@ -40,4 +51,21 @@ export function personCitations(
     ...indi.associations.flatMap((a) => [...a.citations, ...ofNotes(a.notes)]),
     ...ofNotes(indi.notes),
   ];
+}
+
+/** True when one of the person's own citations reaches the threshold: on
+ *  them, their names, events, associations or the notes of these. Those of
+ *  their families do not count: a marriage record says little of each child. */
+export function personMeetsQuality(
+  indi: IndiView,
+  min: MinSourceQuality,
+): boolean {
+  if (min === 'all') return true;
+  return [
+    ...personCitations(indi, indi.events),
+    ...indi.names.flatMap((n) => [
+      ...(n.citations ?? []),
+      ...ofNotes(n.notes ?? []),
+    ]),
+  ].some((c) => meetsQuality(c, min));
 }

@@ -165,6 +165,12 @@ export function Workspace() {
                 {t('legend.decadesUnknown')}
               </span>
             )}
+            {settings.minSourceQuality !== 'all' && (
+              <span className="legend__item">
+                <span className="legend__dimmed" aria-hidden="true" />
+                {t('legend.dimmed')}
+              </span>
+            )}
             <span>{t('legend.julian')}</span>
             <span className="legend__keys">{t('legend.keys')}</span>
           </div>

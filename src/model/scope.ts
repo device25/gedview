@@ -12,6 +12,7 @@
 
 import type {ChartSettings, LoadedTree} from '../gedcom/types';
 import {parentGraph} from './chart';
+import {personMeetsQuality} from './citations';
 
 export type BreadthLevel =
   'direct' | 'siblings' | 'cousins1' | 'cousins2' | 'all';
@@ -135,3 +136,74 @@ export function scopeDrawn(
 
 export const scopeCount = (tree: LoadedTree, people: ReadonlySet<string>) =>
   scopeDrawn(tree, people).size;
+
+/** Who the chart draws, the reliability threshold applied. */
+export interface ChartPeople {
+  /** Blood relatives of the root within the scope. */
+  keep: Set<string>;
+  /** Everyone drawn. */
+  shown: Set<string>;
+  /** Drawn although below the threshold: the root, and those who link
+   *  someone shown to the root. */
+  dimmed: Set<string>;
+}
+
+/** Applies the threshold to the people of a scope: those below it go, unless
+ *  a branch would come apart without them. Paths run over the links the chart
+ *  draws, marriages included, so a spouse above the threshold stays too. */
+export function chartPeople(
+  tree: LoadedTree,
+  settings: ChartSettings,
+  scope: ChartScope,
+): ChartPeople {
+  const keep = scopePeople(tree, settings, scope);
+  const shown = scopeDrawn(tree, keep);
+  const min = settings.minSourceQuality;
+  if (min === 'all' || shown.size === 0)
+    return {keep, shown, dimmed: new Set()};
+
+  const {children} = parentGraph(tree, settings);
+  const links = new Map<string, string[]>();
+  const link = (a: string, b: string) => {
+    links.set(a, [...(links.get(a) ?? []), b]);
+    links.set(b, [...(links.get(b) ?? []), a]);
+  };
+  for (const fam of tree.fams.values()) {
+    const partners = fam.partners.flatMap((p) => (p.indiId ? [p.indiId] : []));
+    if (!partners.some((id) => keep.has(id))) continue;
+    partners.forEach((a, i) => {
+      for (const b of partners.slice(i + 1)) link(a, b);
+      for (const kid of children.get(fam.id) ?? [])
+        if (shown.has(kid)) link(a, kid);
+    });
+  }
+
+  // Breadth-first from the root: each person's way back to it.
+  const cameFrom = new Map<string, string | undefined>([
+    [scope.rootId, undefined],
+  ]);
+  const queue = [scope.rootId];
+  for (let i = 0; i < queue.length; i++) {
+    for (const next of links.get(queue[i]!) ?? []) {
+      if (cameFrom.has(next)) continue;
+      cameFrom.set(next, queue[i]);
+      queue.push(next);
+    }
+  }
+
+  const passing = [...shown].filter((id) => {
+    const indi = tree.indis.get(id);
+    return !!indi && personMeetsQuality(indi, min);
+  });
+  const kept = new Set([scope.rootId]);
+  for (const id of passing) {
+    let at: string | undefined = id;
+    while (at !== undefined && !kept.has(at)) {
+      kept.add(at);
+      at = cameFrom.get(at);
+    }
+  }
+  const dimmed = new Set(kept);
+  for (const id of passing) dimmed.delete(id);
+  return {keep, shown: kept, dimmed};
+}

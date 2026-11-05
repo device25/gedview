@@ -1,7 +1,11 @@
 import {describe, expect, it} from 'vitest';
 import {mockTree} from '../ui/mock/mockTree';
 import {buildHash, DEFAULT_SCOPE, parseHash} from './hash';
-import {scopeDrawn, scopePeople} from '../model/scope';
+import {
+  chartPeople as peopleOnChart,
+  scopeDrawn,
+  scopePeople,
+} from '../model/scope';
 import {DEFAULT_SETTINGS, sanitizeSettings, loadPersisted} from './persist';
 import {
   createInitialState,
@@ -246,5 +250,27 @@ describe('persisted values', () => {
 
   it('survives missing storage', () => {
     expect(loadPersisted()).toEqual({});
+  });
+});
+
+describe('reliability threshold', () => {
+  it('re-roots at a person it hides, so they are seen', () => {
+    const s = reducer(loaded(), {
+      type: 'setSettings',
+      patch: {minSourceQuality: '3'},
+    });
+    const {shown} = peopleOnChart(s.tree!, s.settings, chartScope(s)!);
+    const {shown: all} = peopleOnChart(
+      s.tree!,
+      DEFAULT_SETTINGS,
+      chartScope(s)!,
+    );
+    const hidden = [...all].find((id) => !shown.has(id))!;
+    expect(hidden).toBeDefined();
+    const next = reducer(s, {type: 'select', id: hidden});
+    expect(next.rootId).toBe(hidden);
+    expect(
+      peopleOnChart(next.tree!, next.settings, chartScope(next)!).shown,
+    ).toContain(hidden);
   });
 });
