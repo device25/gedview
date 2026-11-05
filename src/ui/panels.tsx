@@ -352,6 +352,19 @@ export function SettingsPanel({mobileExtras}: {mobileExtras?: boolean}) {
         ]}
       />
       <SelectField
+        label={t('settings.sourceQuality')}
+        value={settings.minSourceQuality}
+        onChange={(v) => set({minSourceQuality: v})}
+        options={[
+          {id: 'all', label: t('settings.sourceQuality.all')},
+          {id: '0', label: '0'},
+          {id: '1', label: '1'},
+          {id: '2', label: '2'},
+          {id: '3', label: '3'},
+        ]}
+        hint={t('settings.sourceQuality.hint')}
+      />
+      <SelectField
         label={t('settings.disproven')}
         value={settings.disproven}
         onChange={(v) => set({disproven: v})}

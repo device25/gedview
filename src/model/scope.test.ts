@@ -1,6 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {buildChartData} from './chart';
-import {scopeCount, scopePeople, type ChartScope} from './scope';
+import {buildChartData as chartData} from './chart';
+import {chartPeople, scopeCount, scopePeople, type ChartScope} from './scope';
 import {doc7, SETTINGS, treeOf} from './test-utils';
 
 // Four generations around Александра (A):
@@ -157,5 +158,129 @@ describe('chart data for a scope', () => {
     expect(data.fams.map((f) => f.id).sort()).toEqual(['F10', 'F11', 'F6']);
     expect(data.fams.find((f) => f.id === 'F11')!.children).toEqual([]);
     expect(scopeCount(T, keep)).toBe(6);
+  });
+});
+
+describe('reliability threshold', () => {
+  // ДЕД (3) → ОТЕЦ (no QUAY) + МАТЬ (1) → КОРЕНЬ, БРАТ (0)
+  // БРАТ + ЖЕНА (3); ДЯДЯ (no citation) is ДЕД's other son.
+  const cited = (quay?: number) =>
+    quay === undefined
+      ? []
+      : ['1 BIRT', '2 SOUR @S1@', ...(quay >= 0 ? [`3 QUAY ${quay}`] : [])];
+  const quay = treeOf(
+    doc7(
+      '0 @S1@ SOUR',
+      '1 TITL Книга',
+      '0 @ROOT@ INDI',
+      '1 NAME Корень',
+      '1 FAMC @F1@',
+      ...cited(2),
+      '0 @FATHER@ INDI',
+      '1 NAME Отец',
+      '1 FAMC @F0@',
+      '1 FAMS @F1@',
+      ...cited(-1),
+      '0 @MOTHER@ INDI',
+      '1 NAME Мать',
+      '1 FAMS @F1@',
+      ...cited(1),
+      '0 @BROTHER@ INDI',
+      '1 NAME Брат',
+      '1 FAMC @F1@',
+      '1 FAMS @F2@',
+      ...cited(0),
+      '0 @WIFE@ INDI',
+      '1 NAME Жена',
+      '1 FAMS @F2@',
+      ...cited(3),
+      '0 @GRAND@ INDI',
+      '1 NAME Дед',
+      '1 FAMS @F0@',
+      ...cited(3),
+      '0 @UNCLE@ INDI',
+      '1 NAME Дядя',
+      '1 FAMC @F0@',
+      '0 @F0@ FAM',
+      '1 HUSB @GRAND@',
+      '1 CHIL @FATHER@',
+      '1 CHIL @UNCLE@',
+      '0 @F1@ FAM',
+      '1 HUSB @FATHER@',
+      '1 WIFE @MOTHER@',
+      '1 CHIL @ROOT@',
+      '1 CHIL @BROTHER@',
+      '0 @F2@ FAM',
+      '1 HUSB @BROTHER@',
+      '1 WIFE @WIFE@',
+    ),
+  );
+  const at = (
+    min: 'all' | '0' | '1' | '2' | '3',
+    rootId = 'ROOT',
+  ): {shown: string[]; dimmed: string[]} => {
+    const {shown, dimmed} = chartPeople(
+      quay,
+      {...SETTINGS, minSourceQuality: min},
+      {rootId, level: 'all', up: 12, down: 12},
+    );
+    return {shown: [...shown].sort(), dimmed: [...dimmed].sort()};
+  };
+
+  it('draws everyone at «all», with nobody dimmed', () => {
+    const scope: ChartScope = {rootId: 'ROOT', level: 'all', up: 12, down: 12};
+    const plain = scopeCount(quay, scopePeople(quay, SETTINGS, scope));
+    expect(at('all').shown).toHaveLength(plain);
+    expect(at('all').dimmed).toEqual([]);
+  });
+
+  it('hides those below it and dims only who links the others', () => {
+    // ОТЕЦ has no QUAY but is the way to ДЕД; БРАТ (0) the way to ЖЕНА.
+    expect(at('3')).toEqual({
+      shown: ['BROTHER', 'FATHER', 'GRAND', 'ROOT', 'WIFE'],
+      dimmed: ['BROTHER', 'FATHER', 'ROOT'],
+    });
+  });
+
+  it('a citation without QUAY stays below any threshold', () => {
+    const {shown, dimmed} = at('0');
+    expect(shown).not.toContain('UNCLE');
+    expect(dimmed).toEqual(['FATHER']);
+  });
+
+  it('always keeps the root, even with nobody else to show', () => {
+    const lonely = treeOf(doc7('0 @A@ INDI', '1 NAME Анна'));
+    const {shown, dimmed} = chartPeople(
+      lonely,
+      {...SETTINGS, minSourceQuality: '3'},
+      {rootId: 'A', level: 'all', up: 12, down: 12},
+    );
+    expect([...shown]).toEqual(['A']);
+    expect([...dimmed]).toEqual(['A']);
+  });
+
+  it('leaves out of the chart data whoever is hidden', () => {
+    const settings = {...SETTINGS, minSourceQuality: '3' as const};
+    const {keep, shown} = chartPeople(quay, settings, {
+      rootId: 'ROOT',
+      level: 'all',
+      up: 12,
+      down: 12,
+    });
+    const data = chartData(quay, settings, {keep, only: shown});
+    expect(data.indis.map((i) => i.id).sort()).toEqual([...shown].sort());
+    const f1 = data.fams.find((f) => f.id === 'F1')!;
+    expect(f1.husb).toBe('FATHER');
+    expect(f1.wife).toBeUndefined();
+    expect(f1.children).toEqual(['ROOT', 'BROTHER']);
+    expect(data.fams.find((f) => f.id === 'F0')?.children).toEqual(['FATHER']);
+  });
+
+  it('drops a family with nobody left to link', () => {
+    const settings = {...SETTINGS, minSourceQuality: '3' as const};
+    const data = chartData(quay, settings, {only: new Set(['GRAND'])});
+    expect(data.fams).toEqual([]);
+    expect(data.indis.map((i) => i.id)).toEqual(['GRAND']);
+    expect(data.indis[0]?.fams).toEqual([]);
   });
 });

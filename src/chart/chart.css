@@ -99,6 +99,22 @@
   fill: var(--card);
 }
 
+/* Below the reliability threshold, kept to link the others: dashed as well
+   as pale, and the text stays readable. */
+.gv-dimmed .gv-card {
+  fill: var(--page);
+  stroke: var(--line);
+  stroke-dasharray: 5 4;
+}
+
+.gv-dimmed .gv-name {
+  fill: var(--text-2);
+}
+
+.gv-photo.gv-dimmed {
+  opacity: 0.5;
+}
+
 .gv-ring,
 .gv-focus {
   display: none;

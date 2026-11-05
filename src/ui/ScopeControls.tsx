@@ -24,8 +24,7 @@ import {
   LEVELS,
   MIN_UP,
   isLevel,
-  scopeCount,
-  scopePeople,
+  chartPeople,
   type BreadthLevel,
 } from '../model/scope';
 import {useAppState, useDispatch} from '../store';
@@ -40,13 +39,12 @@ function useLevelCounts(): Record<BreadthLevel, number> | undefined {
     if (!tree || !rootId) return undefined;
     const out = {} as Record<BreadthLevel, number>;
     for (const level of LEVELS) {
-      const people = scopePeople(tree, settings, {
+      out[level] = chartPeople(tree, settings, {
         rootId,
         level,
         up: scope.up,
         down: scope.down,
-      });
-      out[level] = scopeCount(tree, people);
+      }).shown.size;
     }
     return out;
   }, [tree, settings, rootId, scope.up, scope.down]);

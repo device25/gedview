@@ -37,4 +37,5 @@ export const SETTINGS: ChartSettings = {
   hideRestricted: false,
   loadRemoteMedia: true,
   cardColor: 'none',
+  minSourceQuality: 'all',
 };

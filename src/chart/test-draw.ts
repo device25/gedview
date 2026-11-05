@@ -9,7 +9,7 @@ import {
   type ChartOptions,
 } from 'topola';
 import type {ChartSettings, ChartView, LoadedTree} from '../gedcom/types';
-import {buildChartData} from '../model/chart';
+import {buildChartData, type ChartDataOptions} from '../model/chart';
 import {SETTINGS} from '../model/test-utils';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {GedviewRenderer} from './renderer';
@@ -38,10 +38,11 @@ export function drawChart(
   view: ChartView,
   startIndi: string,
   settings: Partial<ChartSettings> = {},
+  options: ChartDataOptions = {},
 ): Drawn {
   document.body.innerHTML = '<svg id="chart"></svg>';
   const merged = {...SETTINGS, ...settings};
-  const data = new JsonDataProvider(buildChartData(tree, merged));
+  const data = new JsonDataProvider(buildChartData(tree, merged, options));
   const renderer = new GedviewRenderer(
     {data, horizontal: false},
     {

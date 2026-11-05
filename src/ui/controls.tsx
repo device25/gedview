@@ -63,15 +63,19 @@ export function SelectField<T extends string>({
   value,
   onChange,
   options,
+  hint,
 }: {
   label: string;
   value: T;
   onChange: (v: T) => void;
   options: Array<{id: T; label: string}>;
+  hint?: ReactNode;
 }) {
-  return (
+  const hintId = useId();
+  const select = (
     <Select
       className="select"
+      aria-describedby={hint ? hintId : undefined}
       selectedKey={value}
       onSelectionChange={(k) => onChange(String(k) as T)}
     >
@@ -107,5 +111,14 @@ export function SelectField<T extends string>({
         </ListBox>
       </Popover>
     </Select>
+  );
+  if (!hint) return select;
+  return (
+    <div className="check-field">
+      {select}
+      <p id={hintId} className="check__hint">
+        {hint}
+      </p>
+    </div>
   );
 }

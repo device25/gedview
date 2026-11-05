@@ -114,6 +114,16 @@
   gap: 8px;
 }
 
+/* A card below the reliability threshold (.gv-dimmed on the chart). */
+.legend__dimmed {
+  flex: none;
+  width: 28px;
+  height: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  background: var(--page);
+}
+
 /* The decade scale of the cards, oldest to youngest. */
 .legend__decades {
   flex: none;

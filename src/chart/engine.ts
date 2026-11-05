@@ -14,7 +14,7 @@ import {
 import {dateSortKey} from '../gedcom/date';
 import type {ChartSettings, LoadedTree} from '../gedcom/types';
 import {buildChartData} from '../model/chart';
-import {scopePeople, type ChartScope} from '../model/scope';
+import {chartPeople, type ChartScope} from '../model/scope';
 import {ZOOM_MAX, ZOOM_MIN} from '../store/reducer';
 import {childLinkOf, linkInfo, type ChildLink, type LinkNode} from './links';
 import {isNavKey, navigate, type NavBox, type NavEdge} from './nav';
@@ -161,6 +161,7 @@ export class ChartEngine {
   private pills = new Map<string, SVGGElement>();
   private tabKey?: string;
   private selectedKey?: string;
+  private rootKey?: string;
 
   constructor(
     private readonly svgEl: SVGSVGElement,
@@ -268,8 +269,10 @@ export class ChartEngine {
     this.pendingFit = false;
     const {k, exact} = fitScale(this.chartSize, this.size, ZOOM_MIN, FIT_MAX);
     // A chart too big for the smallest scale is shown around the selected
-    // person rather than around its middle.
-    const focus = this.boxes.find((b) => b.key === this.selectedKey);
+    // person, or the root if they aren't on it, rather than around its middle.
+    const focus = this.boxes.find(
+      (b) => b.key === (this.selectedKey ?? this.rootKey),
+    );
     const [cx, cy] =
       exact || !focus
         ? [this.chartSize.w / 2, this.chartSize.h / 2]
@@ -309,8 +312,10 @@ export class ChartEngine {
       this.pills.clear();
       // One layout for every level: topola's relatives chart, fed with the
       // people of the scope only.
-      const keep = scopePeople(tree, settings, scope);
-      this.data = new JsonDataProvider(buildChartData(tree, settings, {keep}));
+      const {keep, only, dimmed} = chartPeople(tree, settings, scope);
+      this.data = new JsonDataProvider(
+        buildChartData(tree, settings, {keep, only}),
+      );
       const ctx: RendererContext = {
         tree,
         settings,
@@ -318,6 +323,7 @@ export class ChartEngine {
         measure: canvasMeasure(`500 15px ${FONT_FAMILY}`, 15),
         selectedId: () => this.currentSelected,
         rootId: scope.rootId,
+        dimmed,
       };
       this.renderer = new GedviewRenderer(
         {data: this.data, horizontal: false},
@@ -348,13 +354,16 @@ export class ChartEngine {
 
     const origin = info.origin;
     this.origin = origin;
-    const links = this.collect(renderer, origin);
+    const links = this.collect(renderer, origin, scope.rootId);
     this.annotate(links, input);
     this.styleLinks(input);
     this.routeCopies(renderer);
     this.laneBars();
 
-    const target = this.boxes.find((b) => b.key === this.selectedKey);
+    // Someone the chart leaves out has no box: the view goes to the root.
+    const target = this.boxes.find(
+      (b) => b.key === (this.selectedKey ?? this.rootKey),
+    );
     if (target) {
       const t = centerXform(target.cx, target.cy, this.goal.k, this.size);
       this.moveTo(t, animate ? MOVE_TIME_MS : 0, animate ? HIDE_TIME_MS : 0);
@@ -391,6 +400,7 @@ export class ChartEngine {
   private collect(
     renderer: GedviewRenderer,
     origin: [number, number],
+    rootId: string,
   ): ChildLink[] {
     const [ox, oy] = origin;
     this.boxes = [];
@@ -432,16 +442,21 @@ export class ChartEngine {
         const key = el.dataset.key;
         if (key) this.elements.set(key, el);
       });
-    // The selected person's box: the one nearest the chart's root.
-    let best = Infinity;
-    this.selectedKey = undefined;
-    for (const [key, id] of ids) {
-      const g = generations.get(key)!;
-      if (id === this.currentSelected && g < best) {
-        best = g;
-        this.selectedKey = key;
+    // A person's box: the one nearest the chart's root.
+    const boxOf = (person: string | undefined) => {
+      let best = Infinity;
+      let found: string | undefined;
+      for (const [key, id] of ids) {
+        const g = generations.get(key)!;
+        if (id === person && g < best) {
+          best = g;
+          found = key;
+        }
       }
-    }
+      return found;
+    };
+    this.selectedKey = boxOf(this.currentSelected);
+    this.rootKey = boxOf(rootId);
     return links;
   }
 
